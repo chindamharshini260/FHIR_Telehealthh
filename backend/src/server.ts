@@ -1,363 +1,518 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import { pool } from "./config/db";
 import bcrypt from "bcrypt";
+import axios from "axios";
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
+
+// ======================================================
+// ROOT
+// ======================================================
+
+app.get("/", (req: Request, res: Response) => {
   res.json({
     message: "FHIR Telehealth Backend is running",
   });
 });
 
-app.post("/api/observations", async (req, res) => {
-  try {
-    const observation = req.body;
 
-    if (!observation || !observation.resourceType) {
-      return res.status(400).json({
-        message: "Invalid FHIR resource",
+// ======================================================
+// FHIR OBSERVATIONS
+// ======================================================
+
+app.post(
+  "/api/observations",
+  async (req: Request, res: Response) => {
+    try {
+      const observation = req.body;
+
+      if (!observation || !observation.resourceType) {
+        return res.status(400).json({
+          message: "Invalid FHIR resource",
+        });
+      }
+
+      let patientId: string | null = null;
+
+      // Normal Observation / Condition
+      if (
+        observation.resourceType === "Observation" ||
+        observation.resourceType === "Condition"
+      ) {
+        patientId =
+          observation.subject?.reference?.replace(
+            "Patient/",
+            ""
+          ) || null;
+      }
+
+      // FHIR Bundle
+      if (observation.resourceType === "Bundle") {
+        const firstResource =
+          observation.entry?.[0]?.resource;
+
+        patientId =
+          firstResource?.subject?.reference?.replace(
+            "Patient/",
+            ""
+          ) || null;
+      }
+
+      if (!patientId) {
+        return res.status(400).json({
+          message:
+            "Patient reference missing from FHIR resource",
+        });
+      }
+
+      const result = await pool.query(
+        `INSERT INTO fhir_observations
+         (patient_id, resource_type, fhir_resource)
+         VALUES ($1, $2, $3)
+         RETURNING *`,
+        [
+          patientId,
+          observation.resourceType,
+          observation,
+        ]
+      );
+
+      res.status(201).json({
+        message: "FHIR resource stored successfully",
+        observation: result.rows[0],
+      });
+    } catch (error) {
+      console.error(
+        "FHIR observation storage error:",
+        error
+      );
+
+      res.status(500).json({
+        message: "Failed to store FHIR resource",
       });
     }
-
-    let patientId: string | null = null;
-
-    // Normal Observation
-   if (
-  observation.resourceType === "Observation" ||
-  observation.resourceType === "Condition"
-) {
-  patientId =
-    observation.subject?.reference?.replace(
-      "Patient/",
-      ""
-    ) || null;
-}
-
-if (observation.resourceType === "Bundle") {
-  const firstResource =
-    observation.entry?.[0]?.resource;
-
-  patientId =
-    firstResource?.subject?.reference?.replace(
-      "Patient/",
-      ""
-    ) || null;
-}
-    if (!patientId) {
-      return res.status(400).json({
-        message: "Patient reference missing from FHIR resource",
-      });
-    }
-
-    const result = await pool.query(
-      `INSERT INTO fhir_observations
-       (patient_id, resource_type, fhir_resource)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
-      [
-        patientId,
-        observation.resourceType,
-        observation,
-      ]
-    );
-
-    res.status(201).json({
-      message: "FHIR resource stored successfully",
-      observation: result.rows[0],
-    });
-  } catch (error) {
-    console.error(
-      "FHIR observation storage error:",
-      error
-    );
-
-    res.status(500).json({
-      message: "Failed to store FHIR resource",
-    });
   }
-});
-app.get("/api/fhir-observations", async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT
-        id,
-        patient_id,
-        resource_type,
-        fhir_resource,
-        created_at
-       FROM fhir_observations
-       ORDER BY created_at DESC`
-    );
+);
 
-    res.json(result.rows);
-  } catch (error) {
-    console.error("FHIR observations fetch error:", error);
 
-    res.status(500).json({
-      message: "Failed to fetch FHIR observations",
-    });
+// ======================================================
+// GET FHIR OBSERVATIONS
+// ======================================================
+
+app.get(
+  "/api/fhir-observations",
+  async (req: Request, res: Response) => {
+    try {
+      const result = await pool.query(
+        `SELECT
+          id,
+          patient_id,
+          resource_type,
+          fhir_resource,
+          created_at
+         FROM fhir_observations
+         ORDER BY created_at DESC`
+      );
+
+      res.json(result.rows);
+    } catch (error) {
+      console.error(
+        "FHIR observations fetch error:",
+        error
+      );
+
+      res.status(500).json({
+        message: "Failed to fetch FHIR observations",
+      });
+    }
   }
-});
+);
 
-const PORT = 5000;
 
-app.get("/api/test-db", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT NOW()");
+// ======================================================
+// TEST DATABASE
+// ======================================================
 
-    res.json({
-      message: "Neon PostgreSQL connected successfully",
-      time: result.rows[0].now,
-    });
-  } catch (error) {
-    console.error("Database connection error:", error);
+app.get(
+  "/api/test-db",
+  async (req: Request, res: Response) => {
+    try {
+      const result = await pool.query(
+        "SELECT NOW()"
+      );
 
-    res.status(500).json({
-      message: "Database connection failed",
-    });
+      res.json({
+        message:
+          "Neon PostgreSQL connected successfully",
+        time: result.rows[0].now,
+      });
+    } catch (error) {
+      console.error(
+        "Database connection error:",
+        error
+      );
+
+      res.status(500).json({
+        message: "Database connection failed",
+      });
+    }
   }
-});
-app.post("/api/auth/signup", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+);
 
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        message: "Name, email and password are required",
+
+// ======================================================
+// AUTH - SIGNUP
+// ======================================================
+
+app.post(
+  "/api/auth/signup",
+  async (req: Request, res: Response) => {
+    try {
+      const {
+        name,
+        email,
+        password,
+      } = req.body;
+
+      if (!name || !email || !password) {
+        return res.status(400).json({
+          message:
+            "Name, email and password are required",
+        });
+      }
+
+      const existingUser = await pool.query(
+        "SELECT id FROM users WHERE email = $1",
+        [email]
+      );
+
+      if (existingUser.rows.length > 0) {
+        return res.status(409).json({
+          message: "Email already registered",
+        });
+      }
+
+      const passwordHash =
+        await bcrypt.hash(password, 10);
+
+      const result = await pool.query(
+        `INSERT INTO users
+         (name, email, password_hash, role)
+         VALUES ($1, $2, $3, 'patient')
+         RETURNING id, name, email, role, created_at`,
+        [
+          name,
+          email,
+          passwordHash,
+        ]
+      );
+
+      res.status(201).json({
+        message:
+          "Patient account created successfully",
+        user: result.rows[0],
+      });
+    } catch (error) {
+      console.error(
+        "Signup error:",
+        error
+      );
+
+      res.status(500).json({
+        message: "Server error during signup",
       });
     }
-
-    const existingUser = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [email]
-    );
-
-    if (existingUser.rows.length > 0) {
-      return res.status(409).json({
-        message: "Email already registered",
-      });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const result = await pool.query(
-      `INSERT INTO users (name, email, password_hash, role)
-       VALUES ($1, $2, $3, 'patient')
-       RETURNING id, name, email, role, created_at`,
-      [name, email, passwordHash]
-    );
-
-    res.status(201).json({
-      message: "Patient account created successfully",
-      user: result.rows[0],
-    });
-  } catch (error) {
-    console.error("Signup error:", error);
-
-    res.status(500).json({
-      message: "Server error during signup",
-    });
   }
-});
-app.post("/api/auth/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
+);
 
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "Email and password are required",
+
+// ======================================================
+// AUTH - LOGIN
+// ======================================================
+
+app.post(
+  "/api/auth/login",
+  async (req: Request, res: Response) => {
+    try {
+      const {
+        email,
+        password,
+      } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({
+          message:
+            "Email and password are required",
+        });
+      }
+
+      const result = await pool.query(
+        `SELECT
+          id,
+          name,
+          email,
+          password_hash,
+          role
+         FROM users
+         WHERE email = $1`,
+        [email]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({
+          message:
+            "Invalid email or password",
+        });
+      }
+
+      const user = result.rows[0];
+
+      const passwordMatch =
+        await bcrypt.compare(
+          password,
+          user.password_hash
+        );
+
+      if (!passwordMatch) {
+        return res.status(401).json({
+          message:
+            "Invalid email or password",
+        });
+      }
+
+      res.json({
+        message: "Login successful",
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      });
+    } catch (error) {
+      console.error(
+        "Login error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Server error during login",
       });
     }
-
-    const result = await pool.query(
-      "SELECT id, name, email, password_hash, role FROM users WHERE email = $1",
-      [email]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(401).json({
-        message: "Invalid email or password",
-      });
-    }
-
-    const user = result.rows[0];
-
-    const passwordMatch = await bcrypt.compare(
-      password,
-      user.password_hash
-    );
-
-    if (!passwordMatch) {
-      return res.status(401).json({
-        message: "Invalid email or password",
-      });
-    }
-
-    res.json({
-      message: "Login successful",
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error("Login error:", error);
-
-    res.status(500).json({
-      message: "Server error during login",
-    });
   }
-});
-app.post("/api/health-readings", async (req, res) => {
-  try {
-    const {
-      patientId,
-      condition,
-      readings,
-    } = req.body;
+);
 
-    if (!patientId || !condition || !readings) {
-      return res.status(400).json({
-        message: "Patient ID, condition and readings are required",
-      });
-    }
 
-    const result = await pool.query(
-      `INSERT INTO health_readings
-       (patient_id, condition, readings)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
-      [
+// ======================================================
+// HEALTH READINGS - SAVE
+// ======================================================
+
+app.post(
+  "/api/health-readings",
+  async (req: Request, res: Response) => {
+    try {
+      const {
         patientId,
         condition,
         readings,
-      ]
-    );
+      } = req.body;
 
-    res.status(201).json({
-      message: "Health reading saved successfully",
-      reading: result.rows[0],
-    });
-  } catch (error) {
-    console.error(
-      "Health reading save error:",
-      error
-    );
+      if (
+        !patientId ||
+        !condition ||
+        !readings
+      ) {
+        return res.status(400).json({
+          message:
+            "Patient ID, condition and readings are required",
+        });
+      }
 
-    res.status(500).json({
-      message: "Failed to save health reading",
-    });
-  }
-});
-app.get("/api/health-readings/:patientId", async (req, res) => {
-  try {
-    const { patientId } = req.params;
+      const result = await pool.query(
+        `INSERT INTO health_readings
+         (patient_id, condition, readings)
+         VALUES ($1, $2, $3)
+         RETURNING *`,
+        [
+          patientId,
+          condition,
+          readings,
+        ]
+      );
 
-    const result = await pool.query(
-      `SELECT *
-       FROM health_readings
-       WHERE patient_id = $1
-       ORDER BY recorded_at DESC`,
-      [patientId]
-    );
-
-    res.json(result.rows);
-  } catch (error) {
-    console.error("Fetch health readings error:", error);
-
-    res.status(500).json({
-      message: "Failed to fetch health readings",
-    });
-  }
-});
-app.get("/api/doctor/health-readings", async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT
-        hr.id,
-        hr.patient_id,
-        u.name AS patient_name,
-        hr.condition,
-        hr.readings,
-        hr.recorded_at
-       FROM health_readings hr
-       JOIN users u
-       ON hr.patient_id = u.id
-       ORDER BY hr.recorded_at DESC`
-    );
-
-    res.json(result.rows);
-  } catch (error) {
-    console.error("Doctor health readings error:", error);
-
-    res.status(500).json({
-      message: "Failed to fetch patient health records",
-    });
-  }
-});
-// Create appointment
-app.post("/api/appointments", async (req, res) => {
-  try {
-    const {
-      patientId,
-      doctorId,
-      appointmentDate,
-      reason,
-    } = req.body;
-
-    if (
-      !patientId ||
-      !doctorId ||
-      !appointmentDate
-    ) {
-      return res.status(400).json({
+      res.status(201).json({
         message:
-          "Patient, doctor and appointment date are required",
+          "Health reading saved successfully",
+        reading: result.rows[0],
+      });
+    } catch (error) {
+      console.error(
+        "Health reading save error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to save health reading",
       });
     }
+  }
+);
 
-    const result = await pool.query(
-      `INSERT INTO appointments
-       (patient_id, doctor_id, appointment_date, reason)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [
+
+// ======================================================
+// HEALTH READINGS - PATIENT
+// ======================================================
+
+app.get(
+  "/api/health-readings/:patientId",
+  async (req: Request, res: Response) => {
+    try {
+      const {
+        patientId,
+      } = req.params;
+
+      const result = await pool.query(
+        `SELECT *
+         FROM health_readings
+         WHERE patient_id = $1
+         ORDER BY recorded_at DESC`,
+        [patientId]
+      );
+
+      res.json(result.rows);
+    } catch (error) {
+      console.error(
+        "Fetch health readings error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to fetch health readings",
+      });
+    }
+  }
+);
+
+
+// ======================================================
+// HEALTH READINGS - DOCTOR
+// ======================================================
+
+app.get(
+  "/api/doctor/health-readings",
+  async (req: Request, res: Response) => {
+    try {
+      const result = await pool.query(
+        `SELECT
+          hr.id,
+          hr.patient_id,
+          u.name AS patient_name,
+          hr.condition,
+          hr.readings,
+hr.recorded_at,
+pc.ml_profile
+         FROM health_readings hr
+         JOIN users u
+         ON hr.patient_id = u.id
+         LEFT JOIN patient_conditions pc
+ON pc.patient_id = hr.patient_id
+AND pc.condition = hr.condition
+         ORDER BY hr.recorded_at DESC`
+      );
+
+      res.json(result.rows);
+    } catch (error) {
+      console.error(
+        "Doctor health readings error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to fetch patient health records",
+      });
+    }
+  }
+);
+
+
+// ======================================================
+// APPOINTMENTS - CREATE
+// ======================================================
+
+app.post(
+  "/api/appointments",
+  async (req: Request, res: Response) => {
+    try {
+      const {
         patientId,
         doctorId,
         appointmentDate,
-        reason || null,
-      ]
-    );
+        reason,
+      } = req.body;
 
-    res.status(201).json({
-      message: "Appointment requested successfully",
-      appointment: result.rows[0],
-    });
-  } catch (error) {
-    console.error(
-      "Create appointment error:",
-      error
-    );
+      if (
+        !patientId ||
+        !doctorId ||
+        !appointmentDate
+      ) {
+        return res.status(400).json({
+          message:
+            "Patient, doctor and appointment date are required",
+        });
+      }
 
-    res.status(500).json({
-      message: "Failed to create appointment",
-    });
+      const result = await pool.query(
+        `INSERT INTO appointments
+         (patient_id, doctor_id, appointment_date, reason)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`,
+        [
+          patientId,
+          doctorId,
+          appointmentDate,
+          reason || null,
+        ]
+      );
+
+      res.status(201).json({
+        message:
+          "Appointment requested successfully",
+        appointment: result.rows[0],
+      });
+    } catch (error) {
+      console.error(
+        "Create appointment error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to create appointment",
+      });
+    }
   }
-});
+);
 
 
-// Get patient appointments
+// ======================================================
+// APPOINTMENTS - PATIENT
+// ======================================================
+
 app.get(
   "/api/appointments/patient/:patientId",
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
-      const { patientId } = req.params;
+      const {
+        patientId,
+      } = req.params;
 
       const result = await pool.query(
         `SELECT
@@ -392,12 +547,17 @@ app.get(
 );
 
 
-// Get doctor appointments
+// ======================================================
+// APPOINTMENTS - DOCTOR
+// ======================================================
+
 app.get(
   "/api/appointments/doctor/:doctorId",
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
-      const { doctorId } = req.params;
+      const {
+        doctorId,
+      } = req.params;
 
       const result = await pool.query(
         `SELECT
@@ -430,19 +590,27 @@ app.get(
     }
   }
 );
-// Get conditions selected by a patient
+
+
+// ======================================================
+// PATIENT CONDITIONS - GET
+// ======================================================
+
 app.get(
   "/api/patient-conditions/:patientId",
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
-      const { patientId } = req.params;
+      const {
+        patientId,
+      } = req.params;
 
       const result = await pool.query(
         `SELECT
-          id,
-          condition,
-          created_at
-         FROM patient_conditions
+  id,
+  condition,
+  ml_profile,
+  created_at
+FROM patient_conditions
          WHERE patient_id = $1
          ORDER BY created_at ASC`,
         [patientId]
@@ -456,21 +624,26 @@ app.get(
       );
 
       res.status(500).json({
-        message: "Failed to fetch patient conditions",
+        message:
+          "Failed to fetch patient conditions",
       });
     }
   }
 );
 
 
-// Add a condition for a patient
+// ======================================================
+// PATIENT CONDITIONS - ADD
+// ======================================================
+
 app.post(
   "/api/patient-conditions",
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const {
         patientId,
         condition,
+        mlProfile,
       } = req.body;
 
       if (!patientId || !condition) {
@@ -484,6 +657,11 @@ app.post(
         "hypertension",
         "diabetes",
         "COPD",
+        "heart_disease",
+        "asthma",
+        "CKD",
+        "obesity",
+        "thyroid",
       ];
 
       if (!allowedConditions.includes(condition)) {
@@ -492,26 +670,69 @@ app.post(
         });
       }
 
-      const result = await pool.query(
-        `INSERT INTO patient_conditions
-         (patient_id, condition)
-         VALUES ($1, $2)
-         ON CONFLICT (patient_id, condition)
-         DO NOTHING
-         RETURNING *`,
-        [patientId, condition]
-      );
+      // -----------------------------------------
+      // Validate hypertension ML profile
+      // -----------------------------------------
 
-      if (result.rows.length === 0) {
-        return res.status(200).json({
-          message: "Condition already added",
-        });
+      if (condition === "hypertension") {
+        if (!mlProfile) {
+          return res.status(400).json({
+            message:
+              "Hypertension profile is required",
+          });
+        }
+
+        const requiredProfileFields = [
+          "male",
+          "age",
+          "currentSmoker",
+          "cigsPerDay",
+          "BPMeds",
+          "diabetes",
+          "totChol",
+          "BMI",
+          "glucose",
+        ];
+
+        const missingFields =
+          requiredProfileFields.filter(
+            (field) =>
+              mlProfile[field] === undefined ||
+              mlProfile[field] === null
+          );
+
+        if (missingFields.length > 0) {
+          return res.status(400).json({
+            message:
+              "Missing hypertension profile fields",
+            missing: missingFields,
+          });
+        }
       }
 
+      const result = await pool.query(
+        `INSERT INTO patient_conditions
+         (patient_id, condition, ml_profile)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (patient_id, condition)
+         DO UPDATE SET ml_profile = COALESCE(
+           EXCLUDED.ml_profile,
+           patient_conditions.ml_profile
+         )
+         RETURNING *`,
+        [
+          patientId,
+          condition,
+          mlProfile || null,
+        ]
+      );
+
       res.status(201).json({
-        message: "Condition added successfully",
+        message:
+          "Condition added successfully",
         condition: result.rows[0],
       });
+
     } catch (error) {
       console.error(
         "Add patient condition error:",
@@ -519,58 +740,213 @@ app.post(
       );
 
       res.status(500).json({
-        message: "Failed to add patient condition",
+        message:
+          "Failed to add patient condition",
       });
     }
   }
 );
-app.patch("/api/appointments/:appointmentId/status", async (req, res) => {
-  try {
-    const { appointmentId } = req.params;
-    const { status } = req.body;
 
-    const allowedStatuses = [
-      "approved",
-      "cancelled",
-      "completed",
-    ];
+// ======================================================
+// APPOINTMENT STATUS UPDATE
+// ======================================================
 
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "Invalid appointment status",
+app.patch(
+  "/api/appointments/:appointmentId/status",
+  async (req: Request, res: Response) => {
+    try {
+      const {
+        appointmentId,
+      } = req.params;
+
+      const {
+        status,
+      } = req.body;
+
+      const allowedStatuses = [
+        "approved",
+        "cancelled",
+        "completed",
+      ];
+
+      if (
+        !allowedStatuses.includes(status)
+      ) {
+        return res.status(400).json({
+          message:
+            "Invalid appointment status",
+        });
+      }
+
+      const result = await pool.query(
+        `UPDATE appointments
+         SET status = $1
+         WHERE id = $2
+         RETURNING *`,
+        [
+          status,
+          appointmentId,
+        ]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          message:
+            "Appointment not found",
+        });
+      }
+
+      res.json({
+        message:
+          "Appointment status updated",
+        appointment: result.rows[0],
+      });
+    } catch (error) {
+      console.error(
+        "Appointment status update error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to update appointment",
       });
     }
-
-    const result = await pool.query(
-      `UPDATE appointments
-       SET status = $1
-       WHERE id = $2
-       RETURNING *`,
-      [status, appointmentId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        message: "Appointment not found",
-      });
-    }
-
-    res.json({
-      message: "Appointment status updated",
-      appointment: result.rows[0],
-    });
-  } catch (error) {
-    console.error(
-      "Appointment status update error:",
-      error
-    );
-
-    res.status(500).json({
-      message: "Failed to update appointment",
-    });
   }
-});
+);
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// ======================================================
+// ML - HEART DISEASE PREDICTION
+// ======================================================
+
+app.post(
+  "/api/ml/heart-disease",
+  async (req: Request, res: Response) => {
+    try {
+      const patientData = req.body;
+
+      const requiredFeatures = [
+        "age",
+        "sex",
+        "cp",
+        "trestbps",
+        "chol",
+        "fbs",
+        "restecg",
+        "thalach",
+        "exang",
+        "oldpeak",
+        "slope",
+        "ca",
+        "thal",
+      ];
+
+      const missingFeatures = requiredFeatures.filter(
+        (feature) =>
+          patientData[feature] === undefined ||
+          patientData[feature] === null
+      );
+
+      if (missingFeatures.length > 0) {
+        return res.status(400).json({
+          message: "Missing ML features",
+          missing: missingFeatures,
+        });
+      }
+
+      const mlResponse = await axios.post(
+        "http://localhost:8000/predict/heart-disease",
+        patientData
+      );
+
+      res.json({
+        message: "ML prediction successful",
+        prediction: mlResponse.data,
+      });
+    } catch (error) {
+      console.error("ML prediction error:", error);
+
+      res.status(500).json({
+        message: "Failed to get ML prediction",
+      });
+    }
+  }
+);
+// ======================================================
+// ML - HYPERTENSION PREDICTION
+// ======================================================
+
+app.post(
+  "/api/ml/hypertension",
+  async (req: Request, res: Response) => {
+    try {
+      const patientData = req.body;
+
+      const requiredFeatures = [
+        "male",
+        "age",
+        "currentSmoker",
+        "cigsPerDay",
+        "BPMeds",
+        "diabetes",
+        "totChol",
+        "sysBP",
+        "diaBP",
+        "BMI",
+        "heartRate",
+        "glucose",
+      ];
+
+      const missingFeatures = requiredFeatures.filter(
+        (feature) =>
+          patientData[feature] === undefined ||
+          patientData[feature] === null
+      );
+
+      if (missingFeatures.length > 0) {
+        return res.status(400).json({
+          message: "Missing hypertension ML features",
+          missing: missingFeatures,
+        });
+      }
+
+      const mlResponse = await axios.post(
+        "http://localhost:8000/predict/hypertension",
+        patientData
+      );
+
+      res.json({
+        message: "Hypertension ML prediction successful",
+        prediction: mlResponse.data,
+      });
+
+    } catch (error) {
+      console.error(
+        "Hypertension ML prediction error:",
+        error
+      );
+
+      res.status(500).json({
+        message: "Failed to get hypertension ML prediction",
+      });
+    }
+  }
+);
+// ======================================================
+// SERVER
+// ======================================================
+
+// Render provides PORT through environment variables.
+// Local development uses port 5000.
+const PORT = Number(process.env.PORT) || 5000;
+
+// 0.0.0.0 allows Render to access the server.
+app.listen(
+  PORT,
+  "0.0.0.0",
+  () => {
+    console.log(
+      `Server running on port ${PORT}`
+    );
+  }
+);

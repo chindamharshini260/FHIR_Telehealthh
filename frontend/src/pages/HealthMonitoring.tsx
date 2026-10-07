@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
+
 import {
   createBloodPressureObservation,
   createGlucoseObservation,
   createCOPDObservations,
+  createHeartDiseaseObservations,
+  createAsthmaObservations,
+  createCKDObservations,
+  createObesityObservations,
+  createThyroidObservations,
 } from "../services/fhirService";
+
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 
@@ -51,6 +58,10 @@ function HealthMonitoring() {
     fetchConditions();
   }, [navigate, loggedInUser?.id]);
 
+  // ============================
+  // FETCH PATIENT CONDITIONS
+  // ============================
+
   const fetchConditions = async () => {
     try {
       const response = await fetch(
@@ -66,14 +77,15 @@ function HealthMonitoring() {
 
       setConditions(data);
     } catch (error) {
-      console.error(
-        "Condition fetch error:",
-        error
-      );
+      console.error("Condition fetch error:", error);
     } finally {
       setLoadingConditions(false);
     }
   };
+
+  // ============================
+  // UPDATE READING
+  // ============================
 
   const updateReading = (
     condition: string,
@@ -90,12 +102,20 @@ function HealthMonitoring() {
     }));
   };
 
+  // ============================
+  // GET READING
+  // ============================
+
   const getReading = (
     condition: string,
     field: string
   ) => {
     return readings[condition]?.[field] || "";
   };
+
+  // ============================
+  // SEND FHIR TO BACKEND
+  // ============================
 
   const sendToBackend = async (
     observation: any
@@ -105,9 +125,11 @@ function HealthMonitoring() {
         "http://localhost:5000/api/observations",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify(observation),
         }
       );
@@ -139,6 +161,10 @@ function HealthMonitoring() {
     }
   };
 
+  // ============================
+  // SAVE READING
+  // ============================
+
   const saveReading = async (
     condition: string
   ) => {
@@ -152,6 +178,10 @@ function HealthMonitoring() {
 
     let isValid = true;
 
+    // ----------------------------
+    // HYPERTENSION
+    // ----------------------------
+
     if (condition === "hypertension") {
       if (
         !reading.systolic ||
@@ -162,17 +192,100 @@ function HealthMonitoring() {
       }
     }
 
+    // ----------------------------
+    // DIABETES
+    // ----------------------------
+
     if (condition === "diabetes") {
       if (!reading.glucose) {
         isValid = false;
       }
     }
 
-    if (condition === "copd") {
+    // ----------------------------
+    // COPD
+    // ----------------------------
+
+    if (condition === "COPD" ||
+        condition.toLowerCase() === "copd") {
       if (
         !reading.spo2 ||
         !reading.respiratoryRate ||
         !reading.heartRate
+      ) {
+        isValid = false;
+      }
+    }
+
+    // ----------------------------
+    // HEART DISEASE
+    // ----------------------------
+
+    if (condition === "heart_disease") {
+      if (
+        !reading.systolic ||
+        !reading.diastolic ||
+        !reading.heartRate ||
+        !reading.spo2
+      ) {
+        isValid = false;
+      }
+    }
+
+    // ----------------------------
+    // ASTHMA
+    // ----------------------------
+
+    if (condition === "asthma") {
+      if (
+        !reading.spo2 ||
+        !reading.respiratoryRate ||
+        !reading.peakFlow
+      ) {
+        isValid = false;
+      }
+    }
+
+    // ----------------------------
+    // CKD
+    // ----------------------------
+
+    if (
+      condition === "CKD" ||
+      condition.toLowerCase() === "ckd"
+    ) {
+      if (
+        !reading.creatinine ||
+        !reading.egfr ||
+        !reading.systolic
+      ) {
+        isValid = false;
+      }
+    }
+
+    // ----------------------------
+    // OBESITY
+    // ----------------------------
+
+    if (condition === "obesity") {
+      if (
+        !reading.weight ||
+        !reading.height ||
+        !reading.bmi
+      ) {
+        isValid = false;
+      }
+    }
+
+    // ----------------------------
+    // THYROID
+    // ----------------------------
+
+    if (condition === "thyroid") {
+      if (
+        !reading.tsh ||
+        !reading.t3 ||
+        !reading.t4
       ) {
         isValid = false;
       }
@@ -189,7 +302,9 @@ function HealthMonitoring() {
     setSavingCondition(condition);
 
     try {
-      /* Save locally as backup */
+      // ============================
+      // LOCAL STORAGE
+      // ============================
 
       const existing = JSON.parse(
         localStorage.getItem(
@@ -199,10 +314,15 @@ function HealthMonitoring() {
 
       const newReading = {
         id: Date.now(),
+
         patientId,
+
         patientName,
+
         condition,
+
         readings: reading,
+
         date: new Date().toLocaleString(),
       };
 
@@ -213,17 +333,19 @@ function HealthMonitoring() {
         JSON.stringify(existing)
       );
 
-
-      /* Save to Neon */
+      // ============================
+      // SAVE TO NEON
+      // ============================
 
       const response = await fetch(
         "http://localhost:5000/api/health-readings",
         {
           method: "POST",
+
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             patientId,
             condition,
@@ -248,16 +370,17 @@ function HealthMonitoring() {
         data
       );
 
+      // ============================
+      // FHIR - HYPERTENSION
+      // ============================
 
-      /* Generate FHIR */
-
-      if (
-        condition === "hypertension"
-      ) {
+      if (condition === "hypertension") {
         const observation =
           createBloodPressureObservation(
             patientId,
+
             Number(reading.systolic),
+
             Number(reading.diastolic)
           );
 
@@ -266,13 +389,15 @@ function HealthMonitoring() {
         );
       }
 
+      // ============================
+      // FHIR - DIABETES
+      // ============================
 
-      if (
-        condition === "diabetes"
-      ) {
+      if (condition === "diabetes") {
         const observation =
           createGlucoseObservation(
             patientId,
+
             Number(reading.glucose)
           );
 
@@ -281,20 +406,25 @@ function HealthMonitoring() {
         );
       }
 
+      // ============================
+      // FHIR - COPD
+      // ============================
 
       if (
-        condition === "copd"
+        condition === "COPD" ||
+        condition.toLowerCase() === "copd"
       ) {
         const observation =
           createCOPDObservations(
             patientId,
+
             Number(reading.spo2),
+
             Number(
               reading.respiratoryRate
             ),
-            Number(
-              reading.heartRate
-            )
+
+            Number(reading.heartRate)
           );
 
         await sendToBackend(
@@ -302,10 +432,125 @@ function HealthMonitoring() {
         );
       }
 
-      /* Clear today's form */
+      // ============================
+      // FHIR - HEART DISEASE
+      // ============================
+
+      if (condition === "heart_disease") {
+        const observation =
+          createHeartDiseaseObservations(
+            patientId,
+
+            Number(reading.systolic),
+
+            Number(reading.diastolic),
+
+            Number(reading.heartRate),
+
+            Number(reading.spo2)
+          );
+
+        await sendToBackend(
+          observation
+        );
+      }
+
+      // ============================
+      // FHIR - ASTHMA
+      // ============================
+
+      if (condition === "asthma") {
+        const observation =
+          createAsthmaObservations(
+            patientId,
+
+            Number(reading.spo2),
+
+            Number(
+              reading.respiratoryRate
+            ),
+
+            Number(reading.peakFlow)
+          );
+
+        await sendToBackend(
+          observation
+        );
+      }
+
+      // ============================
+      // FHIR - CKD
+      // ============================
+
+      if (
+        condition === "CKD" ||
+        condition.toLowerCase() === "ckd"
+      ) {
+        const observation =
+          createCKDObservations(
+            patientId,
+
+            Number(reading.creatinine),
+
+            Number(reading.egfr),
+
+            Number(reading.systolic)
+          );
+
+        await sendToBackend(
+          observation
+        );
+      }
+
+      // ============================
+      // FHIR - OBESITY
+      // ============================
+
+      if (condition === "obesity") {
+        const observation =
+          createObesityObservations(
+            patientId,
+
+            Number(reading.weight),
+
+            Number(reading.height),
+
+            Number(reading.bmi)
+          );
+
+        await sendToBackend(
+          observation
+        );
+      }
+
+      // ============================
+      // FHIR - THYROID
+      // ============================
+
+      if (condition === "thyroid") {
+        const observation =
+          createThyroidObservations(
+            patientId,
+
+            Number(reading.tsh),
+
+            Number(reading.t3),
+
+            Number(reading.t4)
+          );
+
+        await sendToBackend(
+          observation
+        );
+      }
+
+      // ============================
+      // CLEAR FORM
+      // ============================
 
       setReadings((previous) => ({
         ...previous,
+
         [condition]: {},
       }));
 
@@ -314,7 +559,6 @@ function HealthMonitoring() {
           condition
         )} reading saved successfully!`
       );
-
     } catch (error) {
       console.error(
         "Health reading save error:",
@@ -329,41 +573,182 @@ function HealthMonitoring() {
     }
   };
 
+  // ============================
+  // CONDITION NAME
+  // ============================
+
   const getConditionName = (
     condition: string
   ) => {
-    if (condition === "hypertension") {
+    const value =
+      condition.toLowerCase();
+
+    if (value === "hypertension") {
       return "Hypertension";
     }
 
-    if (condition === "diabetes") {
+    if (value === "diabetes") {
       return "Diabetes";
     }
 
-    if (condition === "copd") {
+    if (value === "copd") {
       return "COPD";
+    }
+
+    if (value === "heart_disease") {
+      return "Heart Disease";
+    }
+
+    if (value === "asthma") {
+      return "Asthma";
+    }
+
+    if (value === "ckd") {
+      return "Chronic Kidney Disease";
+    }
+
+    if (value === "obesity") {
+      return "Obesity";
+    }
+
+    if (value === "thyroid") {
+      return "Thyroid Disorder";
     }
 
     return condition;
   };
 
+  // ============================
+  // CONDITION DESCRIPTION
+  // ============================
+
   const getConditionDescription = (
     condition: string
   ) => {
-    if (condition === "hypertension") {
-      return "Monitor blood pressure and heart rate.";
+    const value =
+      condition.toLowerCase();
+
+    if (value === "hypertension") {
+      return "Blood pressure & heart rate";
     }
 
-    if (condition === "diabetes") {
-      return "Monitor blood glucose levels.";
+    if (value === "diabetes") {
+      return "Blood glucose monitoring";
     }
 
-    if (condition === "copd") {
-      return "Monitor oxygen saturation, respiratory rate and heart rate.";
+    if (value === "copd") {
+      return "Oxygen, breathing & heart rate";
+    }
+
+    if (value === "heart_disease") {
+      return "Blood pressure, heart rate & oxygen";
+    }
+
+    if (value === "asthma") {
+      return "Oxygen, breathing & peak flow";
+    }
+
+    if (value === "ckd") {
+      return "Kidney function & blood pressure";
+    }
+
+    if (value === "obesity") {
+      return "Weight, height & BMI";
+    }
+
+    if (value === "thyroid") {
+      return "TSH, T3 & T4 monitoring";
     }
 
     return "";
   };
+
+  // ============================
+  // CONDITION ICON
+  // ============================
+
+  const getConditionIcon = (
+    condition: string
+  ) => {
+    const value =
+      condition.toLowerCase();
+
+    if (value === "hypertension") {
+      return "♥";
+    }
+
+    if (value === "diabetes") {
+      return "●";
+    }
+
+    if (value === "copd") {
+      return "♢";
+    }
+
+    if (value === "heart_disease") {
+      return "♥";
+    }
+
+    if (value === "asthma") {
+      return "♨";
+    }
+
+    if (value === "ckd") {
+      return "◆";
+    }
+
+    if (value === "obesity") {
+      return "●";
+    }
+
+    if (value === "thyroid") {
+      return "◇";
+    }
+
+    return "+";
+  };
+
+  // ============================
+  // INPUT FIELD
+  // ============================
+
+  const inputField = (
+    condition: string,
+    field: string,
+    label: string,
+    unit: string,
+    placeholder: string
+  ) => (
+    <div className="monitor-input-group">
+      <label>
+        {label}
+
+        <span>
+          {unit}
+        </span>
+      </label>
+
+      <input
+        type="number"
+        placeholder={placeholder}
+        value={getReading(
+          condition,
+          field
+        )}
+        onChange={(e) =>
+          updateReading(
+            condition,
+            field,
+            e.target.value
+          )
+        }
+      />
+    </div>
+  );
+
+  // ============================
+  // UI
+  // ============================
 
   return (
     <div className="app">
@@ -378,10 +763,17 @@ function HealthMonitoring() {
             +
           </div>
 
-          FHIR Telehealth
+          <div>
+            <div>
+              FHIR Telehealth
+            </div>
+
+            <small>
+              Remote Healthcare
+            </small>
+          </div>
 
         </div>
-
 
         <div className="header-right">
 
@@ -393,12 +785,19 @@ function HealthMonitoring() {
                 .toUpperCase()}
             </div>
 
-            <span className="user-name">
-              {patientName}
-            </span>
+            <div>
+
+              <div className="user-name">
+                {patientName}
+              </div>
+
+              <small className="user-role">
+                Patient
+              </small>
+
+            </div>
 
           </div>
-
 
           <button
             className="logout-button"
@@ -417,83 +816,104 @@ function HealthMonitoring() {
 
       </header>
 
-
       <div className="dashboard-layout">
 
         <Sidebar />
 
+        <main className="main-content monitoring-page">
 
-        <main className="main-content">
+          {/* PAGE HEADER */}
 
-          <div className="page-header">
+          <div className="monitoring-header">
 
-            <h1>
-              Daily Health Monitoring
-            </h1>
+            <div>
 
-            <p>
-              Enter today's readings for your
-              monitored health conditions.
-            </p>
+              <div className="section-kicker">
+                DAILY MONITORING
+              </div>
 
-          </div>
+              <h1>
+                Today's Health Readings
+              </h1>
 
+              <p>
+                Record your latest readings
+                for your monitored conditions.
+              </p>
 
-          {/* PATIENT */}
+            </div>
 
-          <div
-            className="card"
-            style={{
-              marginBottom: "18px",
-              background:
-                "linear-gradient(135deg, #eff8ff, #ffffff)",
-            }}
-          >
-
-            <strong>
-              Welcome, {patientName}
-            </strong>
-
-            <p
-              style={{
-                marginBottom: 0,
-                color: "#64748b",
-              }}
+            <button
+              className="secondary-button"
+              onClick={() =>
+                navigate("/conditions")
+              }
             >
-              Your health readings are securely
-              linked to your patient account.
-            </p>
+              + Manage Conditions
+            </button>
 
           </div>
 
+          {/* PATIENT STRIP */}
+
+          <div className="monitor-patient-strip">
+
+            <div className="monitor-patient-avatar">
+              {patientName
+                ?.charAt(0)
+                .toUpperCase()}
+            </div>
+
+            <div>
+
+              <strong>
+                {patientName}
+              </strong>
+
+              <span>
+                Your readings are securely
+                linked to your patient account.
+              </span>
+
+            </div>
+
+            <div className="monitor-date">
+              {new Date().toLocaleDateString(
+                undefined,
+                {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                }
+              )}
+            </div>
+
+          </div>
 
           {/* LOADING */}
 
           {loadingConditions && (
+            <div className="dashboard-panel">
 
-            <div className="card">
-
-              <div className="empty-state">
-
-                <h3>
-                  Loading your conditions...
-                </h3>
-
+              <div className="monitor-empty">
+                Loading your conditions...
               </div>
 
             </div>
-
           )}
-
 
           {/* NO CONDITIONS */}
 
           {!loadingConditions &&
             conditions.length === 0 && (
 
-              <div className="card">
+              <div className="dashboard-panel">
 
-                <div className="empty-state">
+                <div className="monitor-empty">
+
+                  <div className="monitor-empty-icon">
+                    +
+                  </div>
 
                   <h3>
                     No health conditions added
@@ -506,9 +926,6 @@ function HealthMonitoring() {
 
                   <button
                     className="primary-button"
-                    style={{
-                      marginTop: "14px",
-                    }}
                     onClick={() =>
                       navigate(
                         "/conditions"
@@ -524,53 +941,45 @@ function HealthMonitoring() {
 
             )}
 
-
           {/* CONDITION CARDS */}
 
           {!loadingConditions &&
             conditions.length > 0 && (
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns:
-                    "repeat(auto-fit, minmax(320px, 1fr))",
-                  gap: "18px",
-                }}
-              >
+              <div className="monitoring-grid">
 
-                {conditions.map(
-                  (item) => {
+                {conditions.map((item) => {
 
-                    const condition =
-                      item.condition;
+                  const condition =
+                    item.condition;
 
-                    const currentReading =
-                      readings[
-                        condition
-                      ] || {};
+                  const lowerCondition =
+                    condition.toLowerCase();
 
-                    return (
+                  const isSaving =
+                    savingCondition ===
+                    condition;
 
-                      <div
-                        className="card"
-                        key={item.id}
-                      >
+                  return (
 
-                        {/* CONDITION HEADER */}
+                    <div
+                      className="monitor-condition-card"
+                      key={item.id}
+                    >
 
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent:
-                              "space-between",
-                            alignItems:
-                              "flex-start",
-                            gap: "12px",
-                            marginBottom:
-                              "18px",
-                          }}
-                        >
+                      {/* CARD HEADER */}
+
+                      <div className="monitor-card-header">
+
+                        <div className="monitor-condition-title">
+
+                          <div
+                            className={`monitor-condition-icon ${lowerCondition}`}
+                          >
+                            {getConditionIcon(
+                              condition
+                            )}
+                          </div>
 
                           <div>
 
@@ -580,14 +989,7 @@ function HealthMonitoring() {
                               )}
                             </h2>
 
-                            <p
-                              style={{
-                                color:
-                                  "#70859a",
-                                margin:
-                                  "4px 0 0",
-                              }}
-                            >
+                            <p>
                               {getConditionDescription(
                                 condition
                               )}
@@ -595,465 +997,365 @@ function HealthMonitoring() {
 
                           </div>
 
-                          <span className="status-badge status-neutral">
-                            Daily
-                          </span>
-
                         </div>
 
-
-                        {/* HYPERTENSION */}
-
-                        {condition ===
-                          "hypertension" && (
-
-                          <div>
-
-                            <div className="form-group">
-
-                              <label>
-                                Systolic BP
-                                <span
-                                  style={{
-                                    color:
-                                      "#94a3b8",
-                                    marginLeft:
-                                      "5px",
-                                    fontWeight:
-                                      "400",
-                                  }}
-                                >
-                                  mmHg
-                                </span>
-                              </label>
-
-                              <input
-                                type="number"
-                                placeholder="e.g. 120"
-                                value={
-                                  currentReading.systolic ||
-                                  ""
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  updateReading(
-                                    condition,
-                                    "systolic",
-                                    e.target
-                                      .value
-                                  )
-                                }
-                              />
-
-                            </div>
-
-
-                            <div className="form-group">
-
-                              <label>
-                                Diastolic BP
-                                <span
-                                  style={{
-                                    color:
-                                      "#94a3b8",
-                                    marginLeft:
-                                      "5px",
-                                    fontWeight:
-                                      "400",
-                                  }}
-                                >
-                                  mmHg
-                                </span>
-                              </label>
-
-                              <input
-                                type="number"
-                                placeholder="e.g. 80"
-                                value={
-                                  currentReading.diastolic ||
-                                  ""
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  updateReading(
-                                    condition,
-                                    "diastolic",
-                                    e.target
-                                      .value
-                                  )
-                                }
-                              />
-
-                            </div>
-
-
-                            <div className="form-group">
-
-                              <label>
-                                Heart Rate
-                                <span
-                                  style={{
-                                    color:
-                                      "#94a3b8",
-                                    marginLeft:
-                                      "5px",
-                                    fontWeight:
-                                      "400",
-                                  }}
-                                >
-                                  BPM
-                                </span>
-                              </label>
-
-                              <input
-                                type="number"
-                                placeholder="e.g. 72"
-                                value={
-                                  currentReading.heartRate ||
-                                  ""
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  updateReading(
-                                    condition,
-                                    "heartRate",
-                                    e.target
-                                      .value
-                                  )
-                                }
-                              />
-
-                            </div>
-
-                          </div>
-
-                        )}
-
-
-                        {/* DIABETES */}
-
-                        {condition ===
-                          "diabetes" && (
-
-                          <div>
-
-                            <div className="form-group">
-
-                              <label>
-                                Blood Glucose
-                                <span
-                                  style={{
-                                    color:
-                                      "#94a3b8",
-                                    marginLeft:
-                                      "5px",
-                                    fontWeight:
-                                      "400",
-                                  }}
-                                >
-                                  mg/dL
-                                </span>
-                              </label>
-
-                              <input
-                                type="number"
-                                placeholder="e.g. 110"
-                                value={
-                                  currentReading.glucose ||
-                                  ""
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  updateReading(
-                                    condition,
-                                    "glucose",
-                                    e.target
-                                      .value
-                                  )
-                                }
-                              />
-
-                            </div>
-
-
-                            <div className="form-group">
-
-                              <label>
-                                HbA1c
-                                <span
-                                  style={{
-                                    color:
-                                      "#94a3b8",
-                                    marginLeft:
-                                      "5px",
-                                    fontWeight:
-                                      "400",
-                                  }}
-                                >
-                                  %
-                                </span>
-                              </label>
-
-                              <input
-                                type="number"
-                                step="0.1"
-                                placeholder="e.g. 6.2"
-                                value={
-                                  currentReading.hba1c ||
-                                  ""
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  updateReading(
-                                    condition,
-                                    "hba1c",
-                                    e.target
-                                      .value
-                                  )
-                                }
-                              />
-
-                            </div>
-
-
-                            <div className="form-group">
-
-                              <label>
-                                Weight
-                                <span
-                                  style={{
-                                    color:
-                                      "#94a3b8",
-                                    marginLeft:
-                                      "5px",
-                                    fontWeight:
-                                      "400",
-                                  }}
-                                >
-                                  kg
-                                </span>
-                              </label>
-
-                              <input
-                                type="number"
-                                placeholder="e.g. 65"
-                                value={
-                                  currentReading.weight ||
-                                  ""
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  updateReading(
-                                    condition,
-                                    "weight",
-                                    e.target
-                                      .value
-                                  )
-                                }
-                              />
-
-                            </div>
-
-                          </div>
-
-                        )}
-
-
-                        {/* COPD */}
-
-                        {condition ===
-                          "COPD" ||
-                        condition ===
-                          "copd" ? (
-
-                          <div>
-
-                            <div className="form-group">
-
-                              <label>
-                                SpO₂
-                                <span
-                                  style={{
-                                    color:
-                                      "#94a3b8",
-                                    marginLeft:
-                                      "5px",
-                                    fontWeight:
-                                      "400",
-                                  }}
-                                >
-                                  %
-                                </span>
-                              </label>
-
-                              <input
-                                type="number"
-                                placeholder="e.g. 97"
-                                value={
-                                  currentReading.spo2 ||
-                                  ""
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  updateReading(
-                                    condition,
-                                    "spo2",
-                                    e.target
-                                      .value
-                                  )
-                                }
-                              />
-
-                            </div>
-
-
-                            <div className="form-group">
-
-                              <label>
-                                Respiratory Rate
-                                <span
-                                  style={{
-                                    color:
-                                      "#94a3b8",
-                                    marginLeft:
-                                      "5px",
-                                    fontWeight:
-                                      "400",
-                                  }}
-                                >
-                                  breaths/min
-                                </span>
-                              </label>
-
-                              <input
-                                type="number"
-                                placeholder="e.g. 18"
-                                value={
-                                  currentReading.respiratoryRate ||
-                                  ""
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  updateReading(
-                                    condition,
-                                    "respiratoryRate",
-                                    e.target
-                                      .value
-                                  )
-                                }
-                              />
-
-                            </div>
-
-
-                            <div className="form-group">
-
-                              <label>
-                                Heart Rate
-                                <span
-                                  style={{
-                                    color:
-                                      "#94a3b8",
-                                    marginLeft:
-                                      "5px",
-                                    fontWeight:
-                                      "400",
-                                  }}
-                                >
-                                  BPM
-                                </span>
-                              </label>
-
-                              <input
-                                type="number"
-                                placeholder="e.g. 72"
-                                value={
-                                  currentReading.heartRate ||
-                                  ""
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  updateReading(
-                                    condition,
-                                    "heartRate",
-                                    e.target
-                                      .value
-                                  )
-                                }
-                              />
-
-                            </div>
-
-                          </div>
-
-                        ) : null}
-
-
-                        {/* SAVE */}
-
-                        <button
-                          className="primary-button"
-                          style={{
-                            width: "100%",
-                            marginTop: "4px",
-                          }}
-                          onClick={() =>
-                            saveReading(
-                              condition
-                            )
-                          }
-                          disabled={
-                            savingCondition ===
-                            condition
-                          }
-                        >
-                          {savingCondition ===
-                          condition
-                            ? "Saving..."
-                            : "Save Today's Reading"}
-                        </button>
+                        <span className="monitor-active-badge">
+                          Active
+                        </span>
 
                       </div>
 
-                    );
-                  }
-                )}
+                      {/* HYPERTENSION */}
+
+                      {lowerCondition ===
+                        "hypertension" && (
+
+                        <div className="monitor-fields">
+
+                          {inputField(
+                            condition,
+                            "systolic",
+                            "Systolic BP",
+                            "mmHg",
+                            "120"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "diastolic",
+                            "Diastolic BP",
+                            "mmHg",
+                            "80"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "heartRate",
+                            "Heart Rate",
+                            "BPM",
+                            "72"
+                          )}
+
+                        </div>
+
+                      )}
+
+                      {/* DIABETES */}
+
+                      {lowerCondition ===
+                        "diabetes" && (
+
+                        <div className="monitor-fields">
+
+                          {inputField(
+                            condition,
+                            "glucose",
+                            "Blood Glucose",
+                            "mg/dL",
+                            "110"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "hba1c",
+                            "HbA1c",
+                            "%",
+                            "6.2"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "weight",
+                            "Weight",
+                            "kg",
+                            "65"
+                          )}
+
+                        </div>
+
+                      )}
+
+                      {/* COPD */}
+
+                      {lowerCondition ===
+                        "copd" && (
+
+                        <div className="monitor-fields">
+
+                          {inputField(
+                            condition,
+                            "spo2",
+                            "SpO₂",
+                            "%",
+                            "97"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "respiratoryRate",
+                            "Respiratory Rate",
+                            "breaths/min",
+                            "18"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "heartRate",
+                            "Heart Rate",
+                            "BPM",
+                            "72"
+                          )}
+
+                        </div>
+
+                      )}
+
+                      {/* HEART DISEASE */}
+
+                      {lowerCondition ===
+                        "heart_disease" && (
+
+                        <div className="monitor-fields">
+
+                          {inputField(
+                            condition,
+                            "systolic",
+                            "Systolic BP",
+                            "mmHg",
+                            "120"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "diastolic",
+                            "Diastolic BP",
+                            "mmHg",
+                            "80"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "heartRate",
+                            "Heart Rate",
+                            "BPM",
+                            "72"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "spo2",
+                            "SpO₂",
+                            "%",
+                            "97"
+                          )}
+
+                        </div>
+
+                      )}
+
+                      {/* ASTHMA */}
+
+                      {lowerCondition ===
+                        "asthma" && (
+
+                        <div className="monitor-fields">
+
+                          {inputField(
+                            condition,
+                            "spo2",
+                            "SpO₂",
+                            "%",
+                            "97"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "respiratoryRate",
+                            "Respiratory Rate",
+                            "breaths/min",
+                            "18"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "peakFlow",
+                            "Peak Flow",
+                            "L/min",
+                            "400"
+                          )}
+
+                        </div>
+
+                      )}
+
+                      {/* CKD */}
+
+                      {lowerCondition ===
+                        "ckd" && (
+
+                        <div className="monitor-fields">
+
+                          {inputField(
+                            condition,
+                            "creatinine",
+                            "Creatinine",
+                            "mg/dL",
+                            "1.0"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "egfr",
+                            "eGFR",
+                            "mL/min",
+                            "90"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "systolic",
+                            "Systolic BP",
+                            "mmHg",
+                            "120"
+                          )}
+
+                        </div>
+
+                      )}
+
+                      {/* OBESITY */}
+
+                      {lowerCondition ===
+                        "obesity" && (
+
+                        <div className="monitor-fields">
+
+                          {inputField(
+                            condition,
+                            "weight",
+                            "Weight",
+                            "kg",
+                            "65"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "height",
+                            "Height",
+                            "cm",
+                            "170"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "bmi",
+                            "BMI",
+                            "kg/m²",
+                            "22"
+                          )}
+
+                        </div>
+
+                      )}
+
+                      {/* THYROID */}
+
+                      {lowerCondition ===
+                        "thyroid" && (
+
+                        <div className="monitor-fields">
+
+                          {inputField(
+                            condition,
+                            "tsh",
+                            "TSH",
+                            "mIU/L",
+                            "2.5"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "t3",
+                            "T3",
+                            "ng/dL",
+                            "120"
+                          )}
+
+                          {inputField(
+                            condition,
+                            "t4",
+                            "T4",
+                            "µg/dL",
+                            "8"
+                          )}
+
+                        </div>
+
+                      )}
+
+                      {/* SAVE */}
+
+                      <button
+                        className="monitor-save-button"
+                        onClick={() =>
+                          saveReading(
+                            condition
+                          )
+                        }
+                        disabled={isSaving}
+                      >
+                        {isSaving
+                          ? "Saving..."
+                          : "Save Today's Reading"}
+                      </button>
+
+                    </div>
+
+                  );
+                })}
 
               </div>
 
             )}
 
-
-          {/* ADD CONDITION */}
+          {/* BOTTOM INFO */}
 
           {!loadingConditions &&
             conditions.length > 0 && (
 
-              <div
-                style={{
-                  marginTop: "20px",
-                  textAlign: "center",
-                }}
-              >
+              <div className="monitor-bottom-row">
+
+                <div className="monitor-info-card">
+
+                  <div className="monitor-info-icon">
+                    ✓
+                  </div>
+
+                  <div>
+
+                    <strong>
+                      Secure Health Monitoring
+                    </strong>
+
+                    <p>
+                      Your readings are linked
+                      to your patient account
+                      and can be represented
+                      using FHIR healthcare
+                      resources.
+                    </p>
+
+                  </div>
+
+                </div>
 
                 <button
                   className="secondary-button"
                   onClick={() =>
-                    navigate(
-                      "/conditions"
-                    )
+                    navigate("/history")
                   }
                 >
-                  + Add Another Condition
+                  View Health History →
                 </button>
 
               </div>

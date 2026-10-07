@@ -13,10 +13,7 @@ type HealthReading = {
 function Dashboard() {
   const navigate = useNavigate();
 
-  const [latest, setLatest] =
-    useState<HealthReading | null>(null);
-
-  const [count, setCount] = useState(0);
+  const [readings, setReadings] = useState<HealthReading[]>([]);
 
   const loggedInUser = JSON.parse(
     localStorage.getItem("loggedInUser") || "null"
@@ -41,65 +38,149 @@ function Dashboard() {
           return;
         }
 
-        setCount(data.length);
-
-        if (data.length > 0) {
-          setLatest(data[0]);
-        }
+        setReadings(data);
       } catch (error) {
-        console.error(
-          "Error fetching health readings:",
-          error
-        );
+        console.error("Error fetching health readings:", error);
       }
     };
 
     fetchReadings();
   }, [navigate, loggedInUser?.id]);
 
+  const latest = readings[0];
+
   const getInitial = () => {
     if (!loggedInUser?.name) return "P";
 
-    return loggedInUser.name
-      .charAt(0)
-      .toUpperCase();
+    return loggedInUser.name.charAt(0).toUpperCase();
   };
+
+  const getLabel = (name: string) => {
+    const labels: Record<string, string> = {
+      glucose: "Blood Glucose",
+      hba1c: "HbA1c",
+      weight: "Weight",
+      systolic: "Systolic BP",
+      diastolic: "Diastolic BP",
+      heartRate: "Heart Rate",
+      spo2: "SpO₂",
+      respiratoryRate: "Respiratory Rate",
+    };
+
+    return labels[name] || name;
+  };
+
+  const getUnit = (name: string) => {
+    const units: Record<string, string> = {
+      glucose: "mg/dL",
+      hba1c: "%",
+      weight: "kg",
+      systolic: "mmHg",
+      diastolic: "mmHg",
+      heartRate: "BPM",
+      spo2: "%",
+      respiratoryRate: "breaths/min",
+    };
+
+    return units[name] || "";
+  };
+
+  const getConditionIcon = (condition: string) => {
+    const value = condition.toLowerCase();
+
+    if (value === "hypertension") return "♥";
+    if (value === "diabetes") return "●";
+    if (value === "copd") return "♢";
+
+    return "✚";
+  };
+
+  const getRisk = () => {
+    if (!latest) return "Not Available";
+
+    const condition = latest.condition.toLowerCase();
+    const data = latest.readings;
+
+    if (condition === "hypertension") {
+      const systolic = Number(data.systolic);
+      const diastolic = Number(data.diastolic);
+
+      if (systolic >= 140 || diastolic >= 90) {
+        return "High";
+      }
+
+      if (systolic >= 130 || diastolic >= 80) {
+        return "Moderate";
+      }
+
+      return "Low";
+    }
+
+    if (condition === "diabetes") {
+      const glucose = Number(data.glucose);
+
+      if (glucose >= 200) return "High";
+      if (glucose >= 140) return "Moderate";
+
+      return "Low";
+    }
+
+    if (condition === "copd") {
+      const spo2 = Number(data.spo2);
+      const respiratoryRate = Number(data.respiratoryRate);
+
+      if (spo2 < 92 || respiratoryRate > 24) {
+        return "High";
+      }
+
+      if (spo2 < 95 || respiratoryRate > 20) {
+        return "Moderate";
+      }
+
+      return "Low";
+    }
+
+    return "Monitoring";
+  };
+
+  const risk = getRisk();
 
   return (
     <div className="app">
 
-      {/* Header */}
+      {/* HEADER */}
       <header className="top-header">
 
         <div className="logo">
-          <div className="logo-icon">
-            +
+          <div className="logo-icon">+</div>
+          <div>
+            <div>FHIR Telehealth</div>
+            <small>Remote Healthcare</small>
           </div>
-
-          FHIR Telehealth
         </div>
 
         <div className="header-right">
 
           <div className="user-info">
-
             <div className="user-avatar">
               {getInitial()}
             </div>
 
-            <span className="user-name">
-              {loggedInUser?.name}
-            </span>
+            <div>
+              <div className="user-name">
+                {loggedInUser?.name}
+              </div>
 
+              <small className="user-role">
+                Patient
+              </small>
+            </div>
           </div>
 
           <button
             className="logout-button"
             onClick={() => {
-              localStorage.removeItem(
-                "loggedInUser"
-              );
-
+              localStorage.removeItem("loggedInUser");
               navigate("/");
             }}
           >
@@ -112,107 +193,314 @@ function Dashboard() {
 
       <div className="dashboard-layout">
 
-        {/* Sidebar */}
         <Sidebar />
 
-        {/* Main Content */}
         <main className="main-content">
 
-          <div className="page-header">
+          {/* PAGE TITLE */}
+          <div className="page-header dashboard-page-title">
 
-            <h1>
-              Good morning,{" "}
-              {loggedInUser?.name?.split(" ")[0]} 👋
-            </h1>
+            <div>
+              <h1>
+                Welcome,{" "}
+                {loggedInUser?.name?.split(" ")[0]}!
+              </h1>
 
-            <p>
-              Here's your health overview.
-            </p>
+              <p>
+                Here's your health overview for today.
+              </p>
+            </div>
+
+            <button
+              className="primary-button dashboard-monitor-btn"
+              onClick={() => navigate("/monitoring")}
+            >
+              + Enter Today's Reading
+            </button>
 
           </div>
 
-          {/* Statistics */}
-          <div className="stats-grid">
+          {/* HEALTH SUMMARY */}
+          <div className="dashboard-summary-grid">
 
-            <div className="stat-card">
+            <div className="dashboard-stat-card">
 
-              <div className="stat-label">
-                Total Readings
+              <div className="dashboard-stat-icon blue">
+                ♥
               </div>
 
-              <div className="stat-value">
-                {count}
-              </div>
-
-            </div>
-
-            <div className="stat-card">
-
-              <div className="stat-label">
-                Current Condition
-              </div>
-
-              <div className="stat-value">
-                {latest
-                  ? latest.condition
-                  : "None"}
+              <div>
+                <span>Health Readings</span>
+                <strong>{readings.length}</strong>
+                <small>Total recorded</small>
               </div>
 
             </div>
 
-            <div className="stat-card">
+            <div className="dashboard-stat-card">
 
-              <div className="stat-label">
-                Latest Reading
+              <div className="dashboard-stat-icon teal">
+                ♡
               </div>
 
-              <div className="stat-value">
-                {latest
-                  ? new Date(
-                      latest.recorded_at
-                    ).toLocaleDateString()
-                  : "--"}
+              <div>
+                <span>Active Condition</span>
+                <strong>
+                  {latest
+                    ? latest.condition
+                    : "None"}
+                </strong>
+                <small>Currently monitored</small>
               </div>
 
             </div>
 
-            <div className="stat-card">
+            <div className="dashboard-stat-card">
 
-              <div className="stat-label">
-                Health Status
+              <div className="dashboard-stat-icon green">
+                ✓
               </div>
 
-              <div className="stat-value">
+              <div>
+                <span>Risk Status</span>
 
-                <span className="status-badge status-low">
-                  Monitoring
-                </span>
+                <strong
+                  className={
+                    risk === "High"
+                      ? "risk-text-high"
+                      : risk === "Moderate"
+                      ? "risk-text-moderate"
+                      : "risk-text-low"
+                  }
+                >
+                  {risk}
+                </strong>
 
+                <small>
+                  Based on latest reading
+                </small>
+              </div>
+
+            </div>
+
+            <div className="dashboard-stat-card">
+
+              <div className="dashboard-stat-icon purple">
+                ◷
+              </div>
+
+              <div>
+                <span>Last Updated</span>
+
+                <strong>
+                  {latest
+                    ? new Date(
+                        latest.recorded_at
+                      ).toLocaleDateString()
+                    : "--"}
+                </strong>
+
+                <small>
+                  Latest health record
+                </small>
               </div>
 
             </div>
 
           </div>
 
-          {/* Latest Reading */}
-          <div className="card">
+          {/* CONDITIONS + RISK */}
+          <div className="dashboard-two-column">
 
-            <h2>
-              Latest Health Reading
-            </h2>
+            {/* ACTIVE CONDITIONS */}
+            <div className="dashboard-panel">
+
+              <div className="panel-heading">
+
+                <div>
+                  <h2>My Health Conditions</h2>
+                  <p>
+                    Conditions currently being monitored
+                  </p>
+                </div>
+
+                <button
+                  className="text-button"
+                  onClick={() =>
+                    navigate("/conditions")
+                  }
+                >
+                  Manage
+                </button>
+
+              </div>
+
+              <div className="condition-cards">
+
+                {["hypertension", "diabetes", "COPD"].map(
+                  (condition) => {
+
+                    const exists = readings.some(
+                      (item) =>
+                        item.condition.toLowerCase() ===
+                        condition.toLowerCase()
+                    );
+
+                    return (
+                      <div
+                        className={`condition-card ${
+                          exists ? "condition-active" : ""
+                        }`}
+                        key={condition}
+                      >
+
+                        <div className="condition-icon">
+                          {getConditionIcon(condition)}
+                        </div>
+
+                        <div>
+                          <strong>
+                            {condition === "COPD"
+                              ? "COPD"
+                              : condition.charAt(0).toUpperCase() +
+                                condition.slice(1)}
+                          </strong>
+
+                          <span>
+                            {exists
+                              ? "Active Monitoring"
+                              : "Not monitored yet"}
+                          </span>
+                        </div>
+
+                        <div
+                          className={
+                            exists
+                              ? "condition-check"
+                              : "condition-dot"
+                          }
+                        >
+                          {exists ? "✓" : ""}
+                        </div>
+
+                      </div>
+                    );
+                  }
+                )}
+
+              </div>
+
+              <button
+                className="secondary-button full-width-button"
+                onClick={() => navigate("/conditions")}
+              >
+                + Add / Manage Conditions
+              </button>
+
+            </div>
+
+            {/* RISK */}
+            <div className="dashboard-panel risk-panel">
+
+              <div className="panel-heading">
+                <div>
+                  <h2>Current Health Risk</h2>
+                  <p>
+                    Based on your latest reading
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className={`risk-display ${
+                  risk === "High"
+                    ? "risk-high"
+                    : risk === "Moderate"
+                    ? "risk-moderate"
+                    : "risk-low"
+                }`}
+              >
+
+                <div className="risk-circle">
+                  {risk === "High"
+                    ? "!"
+                    : risk === "Moderate"
+                    ? "!"
+                    : "✓"}
+                </div>
+
+                <div>
+                  <span>Current Risk</span>
+                  <strong>{risk}</strong>
+                </div>
+
+              </div>
+
+              <p className="risk-description">
+                {risk === "High"
+                  ? "Your latest reading is above the configured high-risk threshold."
+                  : risk === "Moderate"
+                  ? "Your latest reading requires continued monitoring."
+                  : risk === "Low"
+                  ? "Your latest reading is within the configured low-risk range."
+                  : "Enter a health reading to calculate your current risk."}
+              </p>
+
+              <button
+                className="secondary-button full-width-button"
+                onClick={() => navigate("/monitoring")}
+              >
+                View Health Monitoring
+              </button>
+
+            </div>
+
+          </div>
+
+          {/* LATEST READING */}
+          <div className="dashboard-panel latest-reading-panel">
+
+            <div className="panel-heading">
+
+              <div>
+                <h2>Latest Health Reading</h2>
+
+                <p>
+                  {latest
+                    ? `${latest.condition} • ${new Date(
+                        latest.recorded_at
+                      ).toLocaleString()}`
+                    : "No health readings recorded yet"}
+                </p>
+              </div>
+
+              <button
+                className="text-button"
+                onClick={() => navigate("/history")}
+              >
+                View History →
+              </button>
+
+            </div>
 
             {!latest ? (
 
-              <div className="empty-state">
+              <div className="dashboard-empty">
 
-                <h3>
-                  No readings yet
-                </h3>
+                <div className="empty-icon">
+                  +
+                </div>
 
-                <p>
-                  Start monitoring your health
-                  by adding your first reading.
-                </p>
+                <div>
+                  <strong>
+                    No readings yet
+                  </strong>
+
+                  <p>
+                    Start monitoring your health
+                    by entering today's reading.
+                  </p>
+                </div>
 
                 <button
                   className="primary-button"
@@ -220,120 +508,56 @@ function Dashboard() {
                     navigate("/monitoring")
                   }
                 >
-                  Add Health Reading
+                  Start Monitoring
                 </button>
 
               </div>
 
             ) : (
 
-              <>
-                <p>
-                  <strong>
-                    Condition:
-                  </strong>{" "}
-                  {latest.condition}
-                </p>
+              <div className="latest-reading-grid">
 
-                <p>
-                  <strong>
-                    Recorded:
-                  </strong>{" "}
-                  {new Date(
-                    latest.recorded_at
-                  ).toLocaleString()}
-                </p>
+                {Object.entries(
+                  latest.readings
+                ).map(([name, value]) => (
 
-                <div className="reading-grid">
+                  <div
+                    className="latest-reading-item"
+                    key={name}
+                  >
 
-                  {Object.entries(
-                    latest.readings
-                  ).map(
-                    ([name, value]) => {
+                    <span>
+                      {getLabel(name)}
+                    </span>
 
-                      const labels: Record<
-                        string,
-                        string
-                      > = {
-                        glucose:
-                          "Blood Glucose",
-                        hba1c:
-                          "HbA1c",
-                        weight:
-                          "Weight",
-                        systolic:
-                          "Systolic BP",
-                        diastolic:
-                          "Diastolic BP",
-                        heartRate:
-                          "Heart Rate",
-                        spo2:
-                          "SpO₂",
-                        respiratoryRate:
-                          "Respiratory Rate",
-                      };
+                    <strong>
+                      {value}
+                      <small>
+                        {getUnit(name)}
+                      </small>
+                    </strong>
 
-                      const units: Record<
-                        string,
-                        string
-                      > = {
-                        glucose:
-                          "mg/dL",
-                        hba1c:
-                          "%",
-                        weight:
-                          "kg",
-                        systolic:
-                          "mmHg",
-                        diastolic:
-                          "mmHg",
-                        heartRate:
-                          "BPM",
-                        spo2:
-                          "%",
-                        respiratoryRate:
-                          "breaths/min",
-                      };
+                  </div>
 
-                      return (
-                        <div
-                          className="reading-item"
-                          key={name}
-                        >
+                ))}
 
-                          <div className="reading-label">
-                            {labels[name] ||
-                              name}
-                          </div>
-
-                          <div className="reading-value">
-                            {value}
-                            <span className="stat-unit">
-                              {units[name] ||
-                                ""}
-                            </span>
-                          </div>
-
-                        </div>
-                      );
-                    }
-                  )}
-
-                </div>
-              </>
+              </div>
 
             )}
 
           </div>
 
-          {/* Quick Actions */}
-          <div className="card">
+          {/* QUICK ACTIONS */}
+          <div className="quick-actions-panel">
 
-            <h2>
-              Quick Actions
-            </h2>
+            <div>
+              <h2>Today's Health Tasks</h2>
+              <p>
+                Keep your health information up to date.
+              </p>
+            </div>
 
-            <div className="action-row">
+            <div className="quick-action-buttons">
 
               <button
                 className="primary-button"
@@ -341,16 +565,7 @@ function Dashboard() {
                   navigate("/monitoring")
                 }
               >
-                Add New Reading
-              </button>
-
-              <button
-                className="secondary-button"
-                onClick={() =>
-                  navigate("/history")
-                }
-              >
-                View History
+                Enter Health Reading
               </button>
 
               <button
@@ -360,6 +575,15 @@ function Dashboard() {
                 }
               >
                 View Trends
+              </button>
+
+              <button
+                className="secondary-button"
+                onClick={() =>
+                  navigate("/appointments")
+                }
+              >
+                Book Appointment
               </button>
 
             </div>

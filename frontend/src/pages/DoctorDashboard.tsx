@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 type HealthRecord = {
@@ -7,6 +7,7 @@ type HealthRecord = {
   patient_name: string;
   condition: string;
   readings: Record<string, string | number>;
+  ml_profile?: Record<string, string | number> | null;
   recorded_at: string;
 };
 
@@ -23,12 +24,46 @@ function DoctorDashboard() {
 
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [fhirRecords, setFhirRecords] = useState<FHIRRecord[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [fhirLoading, setFhirLoading] = useState(false);
+  const [mlResult, setMlResult] = useState<{
+  disease: string;
+  prediction: number;
+  probability: number;
+  risk: string;
+} | null>(null);
+
+const [mlLoading, setMlLoading] = useState(false);
+const [mlResultRecordId, setMlResultRecordId] =
+  useState<string | null>(null);
+
+  const [hypertensionMlResult, setHypertensionMlResult] = useState<{
+  disease: string;
+  prediction: number;
+  probability: number;
+  risk: string;
+} | null>(null);
+
+const [hypertensionMlLoading, setHypertensionMlLoading] =
+  useState(false);
+
+const [hypertensionMlResultRecordId, setHypertensionMlResultRecordId] =
+  useState<string | null>(null);
+
+  const [selectedPatient, setSelectedPatient] =
+    useState("all");
+
+  const [selectedCondition, setSelectedCondition] =
+    useState("all");
 
   const loggedInUser = JSON.parse(
     localStorage.getItem("loggedInUser") || "null"
   );
+
+  // =========================================================
+  // AUTHENTICATION
+  // =========================================================
 
   useEffect(() => {
     if (!loggedInUser) {
@@ -43,6 +78,10 @@ function DoctorDashboard() {
 
     fetchHealthRecords();
   }, [navigate, loggedInUser?.id]);
+
+  // =========================================================
+  // FETCH HEALTH RECORDS
+  // =========================================================
 
   const fetchHealthRecords = async () => {
     try {
@@ -59,11 +98,18 @@ function DoctorDashboard() {
 
       setRecords(data);
     } catch (error) {
-      console.error("Doctor dashboard error:", error);
+      console.error(
+        "Doctor dashboard error:",
+        error
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  // =========================================================
+  // FETCH FHIR RECORDS
+  // =========================================================
 
   const fetchFHIRRecords = async () => {
     setFhirLoading(true);
@@ -77,25 +123,58 @@ function DoctorDashboard() {
 
       if (!response.ok) {
         console.error(data);
-        alert(data.message || "Failed to fetch FHIR records.");
+
+        alert(
+          data.message ||
+            "Failed to fetch FHIR records."
+        );
+
         return;
       }
 
       setFhirRecords(data);
     } catch (error) {
-      console.error("FHIR fetch error:", error);
-      alert("Unable to fetch FHIR records.");
+      console.error(
+        "FHIR fetch error:",
+        error
+      );
+
+      alert(
+        "Unable to fetch FHIR records."
+      );
     } finally {
       setFhirLoading(false);
     }
   };
 
-  const getRiskLevel = (record: HealthRecord) => {
-    const readings = record.readings || {};
+  // =========================================================
+  // RISK LEVEL
+  // =========================================================
 
-    if (record.condition === "hypertension") {
-      const systolic = Number(readings.systolic);
-      const diastolic = Number(readings.diastolic);
+  const getRiskLevel = (
+    record: HealthRecord
+  ) => {
+    const readings =
+      record.readings || {};
+
+    const condition =
+      record.condition.toLowerCase();
+
+      // =========================================================
+// ML HEART DISEASE PREDICTION
+// =========================================================
+
+
+    // -------------------------
+    // HYPERTENSION
+    // -------------------------
+
+    if (condition === "hypertension") {
+      const systolic =
+        Number(readings.systolic);
+
+      const diastolic =
+        Number(readings.diastolic);
 
       if (
         systolic >= 140 ||
@@ -114,8 +193,13 @@ function DoctorDashboard() {
       return "Low";
     }
 
-    if (record.condition === "diabetes") {
-      const glucose = Number(readings.glucose);
+    // -------------------------
+    // DIABETES
+    // -------------------------
+
+    if (condition === "diabetes") {
+      const glucose =
+        Number(readings.glucose);
 
       if (glucose >= 200) {
         return "High";
@@ -128,11 +212,16 @@ function DoctorDashboard() {
       return "Low";
     }
 
-    if (record.condition === "COPD") {
-      const spo2 = Number(readings.spo2);
-      const respiratoryRate = Number(
-        readings.respiratoryRate
-      );
+    // -------------------------
+    // COPD
+    // -------------------------
+
+    if (condition === "copd") {
+      const spo2 =
+        Number(readings.spo2);
+
+      const respiratoryRate =
+        Number(readings.respiratoryRate);
 
       if (
         spo2 < 92 ||
@@ -151,10 +240,332 @@ function DoctorDashboard() {
       return "Low";
     }
 
+    // -------------------------
+    // HEART DISEASE
+    // -------------------------
+
+    if (
+      condition === "heart_disease"
+    ) {
+      const systolic =
+        Number(readings.systolic);
+
+      const diastolic =
+        Number(readings.diastolic);
+
+      const spo2 =
+        Number(readings.spo2);
+
+      if (
+        systolic >= 140 ||
+        diastolic >= 90 ||
+        spo2 < 92
+      ) {
+        return "High";
+      }
+
+      if (
+        systolic >= 130 ||
+        diastolic >= 80 ||
+        spo2 < 95
+      ) {
+        return "Moderate";
+      }
+
+      return "Low";
+    }
+
+    // -------------------------
+    // ASTHMA
+    // -------------------------
+
+    if (condition === "asthma") {
+      const spo2 =
+        Number(readings.spo2);
+
+      const respiratoryRate =
+        Number(readings.respiratoryRate);
+
+      const peakFlow =
+        Number(readings.peakFlow);
+
+      if (
+        spo2 < 92 ||
+        respiratoryRate > 24 ||
+        peakFlow < 250
+      ) {
+        return "High";
+      }
+
+      if (
+        spo2 < 95 ||
+        respiratoryRate > 20 ||
+        peakFlow < 350
+      ) {
+        return "Moderate";
+      }
+
+      return "Low";
+    }
+
+    // -------------------------
+    // CKD
+    // -------------------------
+
+    if (condition === "ckd") {
+      const creatinine =
+        Number(readings.creatinine);
+
+      const egfr =
+        Number(readings.egfr);
+
+      const systolic =
+        Number(readings.systolic);
+
+      if (
+        creatinine >= 3 ||
+        egfr < 30 ||
+        systolic >= 160
+      ) {
+        return "High";
+      }
+
+      if (
+        creatinine >= 1.5 ||
+        egfr < 60 ||
+        systolic >= 140
+      ) {
+        return "Moderate";
+      }
+
+      return "Low";
+    }
+
+    // -------------------------
+    // OBESITY
+    // -------------------------
+
+    if (condition === "obesity") {
+      const bmi =
+        Number(readings.bmi);
+
+      if (bmi >= 40) {
+        return "High";
+      }
+
+      if (bmi >= 30) {
+        return "Moderate";
+      }
+
+      return "Low";
+    }
+
+    // -------------------------
+    // THYROID
+    // -------------------------
+
+    if (condition === "thyroid") {
+      const tsh =
+        Number(readings.tsh);
+
+      if (
+        tsh < 0.1 ||
+        tsh > 10
+      ) {
+        return "High";
+      }
+
+      if (
+        tsh < 0.4 ||
+        tsh > 4.5
+      ) {
+        return "Moderate";
+      }
+
+      return "Low";
+    }
+
     return "Low";
   };
 
-  const getRiskClass = (risk: string) => {
+ const predictHeartDisease = async (
+  record: HealthRecord
+) => {
+  try {
+    console.log("ML BUTTON CLICKED", record);
+
+    setMlLoading(true);
+    setMlResult(null);
+
+    const readings = record.readings || {};
+
+    const mlInput = {
+      age: Number(readings.age || 55),
+      sex: Number(readings.sex || 1),
+      cp: Number(readings.cp || 1),
+      trestbps: Number(readings.systolic || 120),
+      chol: Number(readings.chol || 200),
+      fbs: Number(readings.fbs || 0),
+      restecg: Number(readings.restecg || 0),
+      thalach: Number(
+        readings.thalach ||
+        readings.heartRate ||
+        70
+      ),
+      exang: Number(readings.exang || 0),
+      oldpeak: Number(readings.oldpeak || 0),
+      slope: Number(readings.slope || 1),
+      ca: Number(readings.ca || 0),
+      thal: Number(readings.thal || 3),
+    };
+
+    console.log("Sending ML request");
+
+    const response = await fetch(
+      "http://localhost:5000/api/ml/heart-disease",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(mlInput),
+      }
+    );
+
+    console.log(
+      "ML response status:",
+      response.status
+    );
+
+    const data = await response.json();
+
+    console.log(
+      "ML response data:",
+      data
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+        "ML prediction failed"
+      );
+    }
+
+    setMlResult(data.prediction);
+
+    setMlResultRecordId(record.id);
+
+    console.log(
+      "SETTING ML RESULT:",
+      data.prediction
+    );
+
+  } catch (error) {
+    console.error(
+      "ML prediction error:",
+      error
+    );
+
+    alert(
+      "Unable to get ML prediction."
+    );
+
+  } finally {
+    setMlLoading(false);
+  }
+};
+const predictHypertension = async (
+  record: HealthRecord
+) => {
+  try {
+    console.log(
+      "HYPERTENSION ML BUTTON CLICKED",
+      record
+    );
+
+    setHypertensionMlLoading(true);
+    setHypertensionMlResult(null);
+
+    const readings = record.readings || {};
+
+    const profile = record.ml_profile || {};
+    console.log("Hypertension ML profile:", profile);
+console.log("Hypertension readings:", readings);
+
+const mlInput = {
+  male: Number(profile.male),
+  age: Number(profile.age),
+  currentSmoker: Number(profile.currentSmoker),
+  cigsPerDay: Number(profile.cigsPerDay),
+  BPMeds: Number(profile.BPMeds),
+  diabetes: Number(profile.diabetes),
+  totChol: Number(profile.totChol),
+  sysBP: Number(readings.systolic),
+  diaBP: Number(readings.diastolic),
+  BMI: Number(profile.BMI),
+  heartRate: Number(readings.heartRate),
+  glucose: Number(profile.glucose),
+};
+
+    console.log(
+      "Sending hypertension ML request:",
+      mlInput
+    );
+
+    const response = await fetch(
+      "http://localhost:5000/api/ml/hypertension",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(mlInput),
+      }
+    );
+
+    const data = await response.json();
+
+    console.log(
+      "Hypertension ML response:",
+      data
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+        "Hypertension ML prediction failed"
+      );
+    }
+
+    setHypertensionMlResult(
+      data.prediction
+    );
+
+    setHypertensionMlResultRecordId(
+      record.id
+    );
+
+  } catch (error) {
+    console.error(
+      "Hypertension ML prediction error:",
+      error
+    );
+
+    alert(
+      "Unable to get hypertension ML prediction."
+    );
+
+  } finally {
+    setHypertensionMlLoading(false);
+  }
+};
+  // =========================================================
+  // RISK CSS CLASS
+  // =========================================================
+
+  const getRiskClass = (
+    risk: string
+  ) => {
     if (risk === "High") {
       return "status-badge status-high";
     }
@@ -166,24 +577,168 @@ function DoctorDashboard() {
     return "status-badge status-low";
   };
 
-  const totalRecords = records.length;
+  // =========================================================
+  // CONDITION NAME
+  // =========================================================
 
-  const uniquePatients = new Set(
-    records.map((record) => record.patient_id)
-  ).size;
+  const getConditionName = (
+    condition: string
+  ) => {
+    const value =
+      condition.toLowerCase();
 
-  const uniqueConditions = new Set(
-    records.map((record) => record.condition)
-  ).size;
+    if (value === "hypertension") {
+      return "Hypertension";
+    }
 
-  const highRiskRecords = records.filter(
-    (record) => getRiskLevel(record) === "High"
-  ).length;
+    if (value === "diabetes") {
+      return "Diabetes";
+    }
+
+    if (value === "copd") {
+      return "COPD";
+    }
+
+    if (value === "heart_disease") {
+      return "Heart Disease";
+    }
+
+    if (value === "asthma") {
+      return "Asthma";
+    }
+
+    if (value === "ckd") {
+      return "Chronic Kidney Disease";
+    }
+
+    if (value === "obesity") {
+      return "Obesity";
+    }
+
+    if (value === "thyroid") {
+      return "Thyroid Disorder";
+    }
+
+    return condition;
+  };
+
+  // =========================================================
+  // PATIENTS
+  // =========================================================
+
+  const patients = useMemo(() => {
+    const map = new Map<
+      string,
+      string
+    >();
+
+    records.forEach((record) => {
+      map.set(
+        record.patient_id,
+        record.patient_name
+      );
+    });
+
+    return Array.from(
+      map.entries()
+    ).map(([id, name]) => ({
+      id,
+      name,
+    }));
+  }, [records]);
+
+  // =========================================================
+  // CONDITIONS
+  // =========================================================
+
+  const conditions = useMemo(() => {
+    return Array.from(
+      new Set(
+        records.map(
+          (record) =>
+            record.condition
+        )
+      )
+    );
+  }, [records]);
+
+  // =========================================================
+  // FILTERED RECORDS
+  // =========================================================
+
+  const filteredRecords =
+    useMemo(() => {
+      return records.filter(
+        (record) => {
+          const patientMatch =
+            selectedPatient ===
+              "all" ||
+            record.patient_id ===
+              selectedPatient;
+
+          const conditionMatch =
+            selectedCondition ===
+              "all" ||
+            record.condition ===
+              selectedCondition;
+
+          return (
+            patientMatch &&
+            conditionMatch
+          );
+        }
+      );
+    }, [
+      records,
+      selectedPatient,
+      selectedCondition,
+    ]);
+
+  // =========================================================
+  // STATISTICS
+  // =========================================================
+
+  const totalRecords =
+    records.length;
+
+  const uniquePatients =
+    patients.length;
+
+  const uniqueConditions =
+    conditions.length;
+
+  const highRiskRecords =
+    records.filter(
+      (record) =>
+        getRiskLevel(record) ===
+        "High"
+    ).length;
+
+  // =========================================================
+  // LATEST RECORDS
+  // =========================================================
+
+  const latestRecords =
+    filteredRecords.slice(0, 8);
+
+  // =========================================================
+  // LOGOUT
+  // =========================================================
+
+  const logout = () => {
+    localStorage.removeItem(
+      "loggedInUser"
+    );
+
+    navigate("/");
+  };
 
   return (
     <div className="app">
 
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+          ===================================================== */}
 
       <header className="top-header">
 
@@ -193,7 +748,15 @@ function DoctorDashboard() {
             +
           </div>
 
-          FHIR Telehealth
+          <div>
+            <div>
+              FHIR Telehealth
+            </div>
+
+            <small>
+              Remote Healthcare
+            </small>
+          </div>
 
         </div>
 
@@ -202,24 +765,30 @@ function DoctorDashboard() {
           <div className="user-info">
 
             <div className="user-avatar">
-              D
+              {loggedInUser?.name
+                ?.charAt(0)
+                .toUpperCase() ||
+                "D"}
             </div>
 
-            <span className="user-name">
-              Doctor Portal
-            </span>
+            <div>
+
+              <div className="user-name">
+                {loggedInUser?.name ||
+                  "Doctor"}
+              </div>
+
+              <small className="user-role">
+                Doctor
+              </small>
+
+            </div>
 
           </div>
 
           <button
             className="logout-button"
-            onClick={() => {
-              localStorage.removeItem(
-                "loggedInUser"
-              );
-
-              navigate("/");
-            }}
+            onClick={logout}
           >
             Logout
           </button>
@@ -228,10 +797,15 @@ function DoctorDashboard() {
 
       </header>
 
+      {/* =====================================================
+          DASHBOARD LAYOUT
+          ===================================================== */}
 
       <div className="dashboard-layout">
 
-        {/* SIDEBAR */}
+        {/* ===================================================
+            SIDEBAR
+            =================================================== */}
 
         <aside className="sidebar">
 
@@ -252,12 +826,15 @@ function DoctorDashboard() {
             <span>
               Patient Overview
             </span>
+
           </button>
 
           <button
             className="nav-item"
             onClick={() =>
-              navigate("/doctor/appointments")
+              navigate(
+                "/doctor/appointments"
+              )
             }
           >
             <span className="nav-icon">
@@ -267,18 +844,26 @@ function DoctorDashboard() {
             <span>
               Appointments
             </span>
+
           </button>
 
         </aside>
 
+        {/* ===================================================
+            MAIN CONTENT
+            =================================================== */}
 
-        {/* MAIN CONTENT */}
+        <main className="main-content doctor-page">
 
-        <main className="main-content">
+          {/* PAGE HEADER */}
 
-          <div className="page-header">
+          <div className="doctor-page-header">
 
             <div>
+
+              <div className="section-kicker">
+                CLINICAL OVERVIEW
+              </div>
 
               <h1>
                 Doctor Dashboard
@@ -291,10 +876,22 @@ function DoctorDashboard() {
 
             </div>
 
+            <button
+              className="primary-button"
+              onClick={() =>
+                navigate(
+                  "/doctor/appointments"
+                )
+              }
+            >
+              View Appointments
+            </button>
+
           </div>
 
-
-          {/* STATISTICS */}
+          {/* =================================================
+              STATISTICS
+              ================================================= */}
 
           <div className="stats-grid">
 
@@ -314,7 +911,6 @@ function DoctorDashboard() {
 
             </div>
 
-
             <div className="stat-card">
 
               <div className="stat-label">
@@ -326,11 +922,10 @@ function DoctorDashboard() {
               </div>
 
               <div className="stat-unit">
-                Registered patients
+                Patients with readings
               </div>
 
             </div>
-
 
             <div className="stat-card">
 
@@ -347,7 +942,6 @@ function DoctorDashboard() {
               </div>
 
             </div>
-
 
             <div className="stat-card">
 
@@ -367,309 +961,106 @@ function DoctorDashboard() {
 
           </div>
 
+          {/* =================================================
+              FILTERS
+              ================================================= */}
 
-          {/* FHIR SECTION */}
+          <div className="doctor-filter-card">
 
-          <div
-            className="card"
-            style={{
-              marginTop: "24px",
-            }}
-          >
+            <div>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent:
-                  "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "15px",
+              <span className="doctor-filter-label">
+                PATIENT
+              </span>
+
+              <select
+                value={selectedPatient}
+                onChange={(e) =>
+                  setSelectedPatient(
+                    e.target.value
+                  )
+                }
+              >
+
+                <option value="all">
+                  All Patients
+                </option>
+
+                {patients.map(
+                  (patient) => (
+                    <option
+                      key={patient.id}
+                      value={patient.id}
+                    >
+                      {patient.name}
+                    </option>
+                  )
+                )}
+
+              </select>
+
+            </div>
+
+            <div>
+
+              <span className="doctor-filter-label">
+                CONDITION
+              </span>
+
+              <select
+                value={selectedCondition}
+                onChange={(e) =>
+                  setSelectedCondition(
+                    e.target.value
+                  )
+                }
+              >
+
+                <option value="all">
+                  All Conditions
+                </option>
+
+                {conditions.map(
+                  (condition) => (
+                    <option
+                      key={condition}
+                      value={condition}
+                    >
+                      {getConditionName(
+                        condition
+                      )}
+                    </option>
+                  )
+                )}
+
+              </select>
+
+            </div>
+
+            <button
+              className="secondary-button"
+              onClick={() => {
+                setSelectedPatient(
+                  "all"
+                );
+
+                setSelectedCondition(
+                  "all"
+                );
               }}
             >
-
-              <div>
-
-                <h2>
-                  FHIR Interoperability
-                </h2>
-
-                <p
-                  style={{
-                    color: "#64748b",
-                    fontSize: "14px",
-                    marginTop: "6px",
-                  }}
-                >
-                  FHIR resources generated from
-                  patient health observations.
-                </p>
-
-              </div>
-
-              <button
-                className="primary-button"
-                onClick={fetchFHIRRecords}
-                disabled={fhirLoading}
-              >
-                {fhirLoading
-                  ? "Loading..."
-                  : "View FHIR Records"}
-              </button>
-
-            </div>
-
-
-            {fhirRecords.length > 0 && (
-
-              <div
-                style={{
-                  marginTop: "20px",
-                }}
-              >
-
-                <div
-                  style={{
-                    display: "grid",
-                    gap: "12px",
-                  }}
-                >
-
-                 {fhirRecords.map(
-  (record) => (
-
-    <div
-      key={record.id}
-      style={{
-        padding: "16px",
-        border: "1px solid #e2e8f0",
-        borderRadius: "12px",
-        background: "#f8fafc",
-      }}
-    >
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "10px",
-        }}
-      >
-
-        <div>
-
-          <strong
-            style={{
-              fontSize: "17px",
-              color: "#0f172a",
-            }}
-          >
-            FHIR Observation
-          </strong>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: "12px",
-              marginTop: "14px",
-            }}
-          >
-
-            <div>
-
-              <span
-                style={{
-                  color: "#64748b",
-                  fontSize: "12px",
-                }}
-              >
-                Resource Type
-              </span>
-
-              <div
-                style={{
-                  fontWeight: "600",
-                  marginTop: "3px",
-                }}
-              >
-                {record.resource_type}
-              </div>
-
-            </div>
-
-
-            <div>
-
-              <span
-                style={{
-                  color: "#64748b",
-                  fontSize: "12px",
-                }}
-              >
-                Patient
-              </span>
-
-              <div
-                style={{
-                  fontWeight: "600",
-                  marginTop: "3px",
-                  wordBreak: "break-all",
-                }}
-              >
-                {record.patient_id}
-              </div>
-
-            </div>
-
-
-            <div>
-
-              <span
-                style={{
-                  color: "#64748b",
-                  fontSize: "12px",
-                }}
-              >
-                Status
-              </span>
-
-              <div
-                style={{
-                  fontWeight: "600",
-                  marginTop: "3px",
-                }}
-              >
-                Final
-              </div>
-
-            </div>
-
-
-            <div>
-
-              <span
-                style={{
-                  color: "#64748b",
-                  fontSize: "12px",
-                }}
-              >
-                Created
-              </span>
-
-              <div
-                style={{
-                  fontWeight: "600",
-                  marginTop: "3px",
-                }}
-              >
-                {new Date(
-                  record.created_at
-                ).toLocaleString()}
-              </div>
-
-            </div>
+              Clear Filters
+            </button>
 
           </div>
 
-        </div>
+          {/* =================================================
+              PATIENT HEALTH RECORDS
+              ================================================= */}
 
+          <div className="doctor-section-card">
 
-        <span className="status-badge status-low">
-          FHIR
-        </span>
-
-      </div>
-
-
-      <details
-        style={{
-          marginTop: "18px",
-        }}
-      >
-
-        <summary
-          style={{
-            cursor: "pointer",
-            color: "#2563eb",
-            fontWeight: "600",
-            fontSize: "14px",
-          }}
-        >
-          View Full FHIR JSON
-        </summary>
-
-        <pre
-          style={{
-            marginTop: "12px",
-            padding: "15px",
-            background: "#0f172a",
-            color: "#e2e8f0",
-            borderRadius: "10px",
-            overflowX: "auto",
-            fontSize: "12px",
-            lineHeight: "1.5",
-          }}
-        >
-          {JSON.stringify(
-            record.fhir_resource,
-            null,
-            2
-          )}
-        </pre>
-
-      </details>
-
-    </div>
-
-  )
-)}
-
-                </div>
-
-              </div>
-
-            )}
-
-            {!fhirLoading &&
-              fhirRecords.length === 0 && (
-
-                <div
-                  className="empty-state"
-                  style={{
-                    marginTop: "20px",
-                  }}
-                >
-
-                  <h3>
-                    No FHIR records loaded
-                  </h3>
-
-                  <p>
-                    Click "View FHIR Records" to
-                    retrieve stored FHIR resources.
-                  </p>
-
-                </div>
-
-              )}
-
-          </div>
-
-
-          {/* PATIENT RECORDS */}
-
-          <div
-            className="card"
-            style={{
-              marginTop: "24px",
-            }}
-          >
-
-            <div className="page-header">
+            <div className="doctor-section-header">
 
               <div>
 
@@ -679,95 +1070,78 @@ function DoctorDashboard() {
 
                 <p>
                   Review recent patient
-                  observations and risk levels.
+                  measurements and risk levels.
                 </p>
 
               </div>
 
-            </div>
+              <span className="doctor-record-count">
+                {filteredRecords.length} records
+              </span>
 
+            </div>
 
             {loading ? (
 
-              <div className="empty-state">
-
-                <h3>
-                  Loading records...
-                </h3>
-
+              <div className="doctor-empty">
+                Loading patient records...
               </div>
 
-            ) : records.length === 0 ? (
+            ) : filteredRecords.length ===
+              0 ? (
 
-              <div className="empty-state">
+              <div className="doctor-empty">
+
+                <div className="doctor-empty-icon">
+                  ◷
+                </div>
 
                 <h3>
-                  No health records
+                  No records found
                 </h3>
 
                 <p>
-                  Patient health readings will
-                  appear here.
+                  No health records match
+                  the selected filters.
                 </p>
 
               </div>
 
             ) : (
 
-              <div
-                style={{
-                  display: "grid",
-                  gap: "16px",
-                }}
-              >
+              <div className="doctor-record-list">
 
-                {records.map(
+                {latestRecords.map(
                   (record) => {
 
                     const risk =
-                      getRiskLevel(record);
+                      getRiskLevel(
+                        record
+                      );
 
                     return (
 
                       <div
+                        className="doctor-record-card"
                         key={record.id}
-                        className="card"
-                        style={{
-                          background:
-                            "#f8fafc",
-                        }}
                       >
 
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent:
-                              "space-between",
-                            alignItems:
-                              "center",
-                            flexWrap:
-                              "wrap",
-                            gap: "12px",
-                          }}
-                        >
+                        <div className="doctor-record-top">
 
                           <div>
 
-                            <h2>
-                              {record.patient_name}
-                            </h2>
+                            <h3>
+                              {
+                                record.patient_name
+                              }
+                            </h3>
 
-                            <p
-                              style={{
-                                color:
-                                  "#64748b",
-                                fontSize:
-                                  "13px",
-                              }}
-                            >
+                            <span>
                               Patient ID:{" "}
-                              {record.patient_id}
-                            </p>
+                              {
+                                record.patient_id
+                              }
+                            </span>
 
                           </div>
 
@@ -781,40 +1155,15 @@ function DoctorDashboard() {
 
                         </div>
 
+                        <div className="doctor-record-meta">
 
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent:
-                              "space-between",
-                            alignItems:
-                              "center",
-                            marginTop: "15px",
-                            marginBottom:
-                              "15px",
-                            flexWrap:
-                              "wrap",
-                            gap: "10px",
-                          }}
-                        >
-
-                          <strong
-                            style={{
-                              textTransform:
-                                "capitalize",
-                            }}
-                          >
-                            {record.condition}
+                          <strong>
+                            {getConditionName(
+                              record.condition
+                            )}
                           </strong>
 
-                          <span
-                            style={{
-                              color:
-                                "#64748b",
-                              fontSize:
-                                "13px",
-                            }}
-                          >
+                          <span>
                             {new Date(
                               record.recorded_at
                             ).toLocaleString()}
@@ -822,20 +1171,20 @@ function DoctorDashboard() {
 
                         </div>
 
-
-                        <div className="reading-grid">
+                        <div className="doctor-reading-grid">
 
                           {Object.entries(
-                            record.readings || {}
+                            record.readings ||
+                              {}
                           ).map(
                             ([key, value]) => (
 
                               <div
-                                className="reading-item"
+                                className="doctor-reading"
                                 key={key}
                               >
 
-                                <div className="reading-label">
+                                <span>
                                   {key
                                     .replace(
                                       /([A-Z])/g,
@@ -846,13 +1195,13 @@ function DoctorDashboard() {
                                       (letter) =>
                                         letter.toUpperCase()
                                     )}
-                                </div>
+                                </span>
 
-                                <div className="reading-value">
-
-                                  {String(value)}
-
-                                </div>
+                                <strong>
+                                  {String(
+                                    value
+                                  )}
+                                </strong>
 
                               </div>
 
@@ -860,6 +1209,128 @@ function DoctorDashboard() {
                           )}
 
                         </div>
+
+                       \<div className="ml-action-row">
+
+  {/* HEART DISEASE ML */}
+  {record.condition.toLowerCase() === "heart_disease" && (
+    <>
+      <button
+        className="primary-button"
+        onClick={() =>
+          predictHeartDisease(record)
+        }
+        disabled={mlLoading}
+      >
+        {mlLoading
+          ? "Analyzing..."
+          : "🤖 Analyze Heart Disease"}
+      </button>
+
+      {mlResult &&
+        mlResultRecordId === record.id && (
+          <div className="ml-inline-result">
+
+            <div className="ml-result-title">
+              🤖 Heart Disease ML Assessment
+            </div>
+
+            <div className="ml-result-items">
+
+              <div>
+                <span>Risk</span>
+                <strong>
+                  {mlResult.risk}
+                </strong>
+              </div>
+
+              <div>
+                <span>Probability</span>
+                <strong>
+                  {mlResult.probability}%
+                </strong>
+              </div>
+
+              <div>
+                <span>Prediction</span>
+                <strong>
+                  {mlResult.prediction === 1
+                    ? "Heart Disease"
+                    : "No Heart Disease"}
+                </strong>
+              </div>
+
+            </div>
+
+            <div className="ml-disclaimer">
+              Decision support only — not a medical diagnosis.
+            </div>
+
+          </div>
+        )}
+    </>
+  )}
+
+  {/* HYPERTENSION ML */}
+  {record.condition.toLowerCase() === "hypertension" && (
+    <>
+      <button
+        className="primary-button"
+        onClick={() =>
+          predictHypertension(record)
+        }
+        disabled={hypertensionMlLoading}
+      >
+        {hypertensionMlLoading
+          ? "Analyzing..."
+          : "🤖 Analyze Hypertension"}
+      </button>
+
+      {hypertensionMlResult &&
+        hypertensionMlResultRecordId === record.id && (
+          <div className="ml-inline-result">
+
+            <div className="ml-result-title">
+              🤖 Hypertension ML Assessment
+            </div>
+
+            <div className="ml-result-items">
+
+              <div>
+                <span>Risk</span>
+                <strong>
+                  {hypertensionMlResult.risk}
+                </strong>
+              </div>
+
+              <div>
+                <span>Probability</span>
+                <strong>
+                  {hypertensionMlResult.probability}%
+                </strong>
+              </div>
+
+              <div>
+                <span>Prediction</span>
+                <strong>
+                  {hypertensionMlResult.prediction === 1
+                    ? "Hypertension Risk"
+                    : "No Hypertension Risk"}
+                </strong>
+              </div>
+
+            </div>
+
+            <div className="ml-disclaimer">
+              Decision support only — not a medical diagnosis.
+            </div>
+
+          </div>
+        )}
+    </>
+  )}
+
+</div>
 
                       </div>
 
@@ -870,6 +1341,174 @@ function DoctorDashboard() {
               </div>
 
             )}
+
+          </div>
+
+          {/* =================================================
+              FHIR INTEROPERABILITY
+              ================================================= */}
+
+          <div className="doctor-section-card">
+
+            <div className="doctor-section-header">
+
+              <div>
+
+                <h2>
+                  FHIR Interoperability
+                </h2>
+
+                <p>
+                  FHIR resources generated from
+                  patient health observations.
+                </p>
+
+              </div>
+
+              <button
+                className="primary-button"
+                onClick={
+                  fetchFHIRRecords
+                }
+                disabled={
+                  fhirLoading
+                }
+              >
+                {fhirLoading
+                  ? "Loading..."
+                  : "Load FHIR Records"}
+              </button>
+
+            </div>
+
+            {fhirRecords.length >
+              0 && (
+
+              <div className="fhir-record-list">
+
+                {fhirRecords.map(
+                  (record) => (
+
+                    <div
+                      className="fhir-record-card"
+                      key={record.id}
+                    >
+
+                      <div className="fhir-record-header">
+
+                        <div>
+
+                          <h3>
+                            FHIR Resource
+                          </h3>
+
+                          <span>
+                            Patient:{" "}
+                            {
+                              record.patient_id
+                            }
+                          </span>
+
+                        </div>
+
+                        <span className="status-badge status-low">
+                          FHIR
+                        </span>
+
+                      </div>
+
+                      <div className="fhir-meta-grid">
+
+                        <div>
+
+                          <span>
+                            Resource Type
+                          </span>
+
+                          <strong>
+                            {
+                              record.resource_type
+                            }
+                          </strong>
+
+                        </div>
+
+                        <div>
+
+                          <span>
+                            Status
+                          </span>
+
+                          <strong>
+                            Final
+                          </strong>
+
+                        </div>
+
+                        <div>
+
+                          <span>
+                            Created
+                          </span>
+
+                          <strong>
+                            {new Date(
+                              record.created_at
+                            ).toLocaleString()}
+                          </strong>
+
+                        </div>
+
+                      </div>
+
+                      <details className="fhir-details">
+
+                        <summary>
+                          View Full FHIR JSON
+                        </summary>
+
+                        <pre>
+                          {JSON.stringify(
+                            record.fhir_resource,
+                            null,
+                            2
+                          )}
+                        </pre>
+
+                      </details>
+
+                    </div>
+
+                  )
+                )}
+
+              </div>
+
+            )}
+
+            {!fhirLoading &&
+              fhirRecords.length ===
+                0 && (
+
+                <div className="doctor-empty">
+
+                  <div className="doctor-empty-icon">
+                    🧬
+                  </div>
+
+                  <h3>
+                    FHIR records not loaded
+                  </h3>
+
+                  <p>
+                    Click "Load FHIR Records"
+                    to retrieve stored FHIR
+                    resources.
+                  </p>
+
+                </div>
+
+              )}
 
           </div>
 

@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-
+import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import HealthMonitoring from "./pages/HealthMonitoring";
 import HealthHistory from "./pages/HealthHistory";
@@ -21,11 +21,8 @@ function App() {
       <Routes>
 
         {/* Patient Authentication */}
-        <Route
-          path="/"
-          element={<Login />}
-        />
-
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
         <Route
           path="/signup"
           element={<Signup />}
