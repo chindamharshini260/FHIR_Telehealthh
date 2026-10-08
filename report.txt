@@ -1,0 +1,423 @@
+===========================================================================
+ANALYSIS REPORT FOR: processed.cleveland.data
+===========================================================================
+A. Filename: processed.cleveland.data
+B. Number of rows: 303
+C. Number of columns: 14
+D. Exact column names: ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg', 'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal', 'target']
+H. Number of duplicate rows: 0
+
+E, F, G. Column Types, Missing Counts, Missing Percentages:
+  - age: Type=Integer, Missing=0 (0.00%)
+  - sex: Type=Integer, Missing=0 (0.00%)
+  - cp: Type=Integer, Missing=0 (0.00%)
+  - trestbps: Type=Integer, Missing=0 (0.00%)
+  - chol: Type=Integer, Missing=0 (0.00%)
+  - fbs: Type=Integer, Missing=0 (0.00%)
+  - restecg: Type=Integer, Missing=0 (0.00%)
+  - thalach: Type=Integer, Missing=0 (0.00%)
+  - exang: Type=Integer, Missing=0 (0.00%)
+  - oldpeak: Type=Float, Missing=0 (0.00%)
+  - slope: Type=Integer, Missing=0 (0.00%)
+  - ca: Type=Integer, Missing=4 (1.32%)
+  - thal: Type=Integer, Missing=2 (0.66%)
+  - target: Type=Integer, Missing=0 (0.00%)
+
+I. Categorical Columns Unique Values:
+  (None - all columns numeric)
+
+J. Numerical Columns Min, Max, Mean, Median:
+  - age: Min=29.0, Max=77.0, Mean=54.44, Median=56.00
+  - sex: Min=0.0, Max=1.0, Mean=0.68, Median=1.00 (discrete unique values: [0.0, 1.0])
+  - cp: Min=1.0, Max=4.0, Mean=3.16, Median=3.00 (discrete unique values: [1.0, 2.0, 3.0, 4.0])
+  - trestbps: Min=94.0, Max=200.0, Mean=131.69, Median=130.00
+  - chol: Min=126.0, Max=564.0, Mean=246.69, Median=241.00
+  - fbs: Min=0.0, Max=1.0, Mean=0.15, Median=0.00 (discrete unique values: [0.0, 1.0])
+  - restecg: Min=0.0, Max=2.0, Mean=0.99, Median=1.00 (discrete unique values: [0.0, 1.0, 2.0])
+  - thalach: Min=71.0, Max=202.0, Mean=149.61, Median=153.00
+  - exang: Min=0.0, Max=1.0, Mean=0.33, Median=0.00 (discrete unique values: [0.0, 1.0])
+  - oldpeak: Min=0.0, Max=6.2, Mean=1.04, Median=0.80
+  - slope: Min=1.0, Max=3.0, Mean=1.60, Median=2.00 (discrete unique values: [1.0, 2.0, 3.0])
+  - ca: Min=0.0, Max=3.0, Mean=0.67, Median=0.00 (discrete unique values: [0.0, 1.0, 2.0, 3.0])
+  - thal: Min=3.0, Max=7.0, Mean=4.73, Median=3.00 (discrete unique values: [3.0, 6.0, 7.0])
+  - target: Min=0.0, Max=4.0, Mean=0.94, Median=0.00 (discrete unique values: [0.0, 1.0, 2.0, 3.0, 4.0])
+
+Candidate Target Distributions:
+  - 'sex' (unique=2): {'1.0': 206, '0.0': 97}
+  - 'cp' (unique=4): {'4.0': 144, '3.0': 86, '2.0': 50, '1.0': 23}
+  - 'fbs' (unique=2): {'0.0': 258, '1.0': 45}
+  - 'restecg' (unique=3): {'0.0': 151, '2.0': 148, '1.0': 4}
+  - 'exang' (unique=2): {'0.0': 204, '1.0': 99}
+  - 'slope' (unique=3): {'1.0': 142, '2.0': 140, '3.0': 21}
+  - 'ca' (unique=4): {'0.0': 176, '1.0': 65, '2.0': 38, '3.0': 20}
+  - 'thal' (unique=3): {'3.0': 166, '7.0': 117, '6.0': 18}
+  - 'target' (unique=5): {'0': 164, '1': 55, '2': 36, '3': 35, '4': 13}
+
+
+
+===========================================================================
+ANALYSIS REPORT FOR: hypertension.csv
+===========================================================================
+A. Filename: hypertension.csv
+B. Number of rows: 4240
+C. Number of columns: 13
+D. Exact column names: ['male', 'age', 'currentSmoker', 'cigsPerDay', 'BPMeds', 'diabetes', 'totChol', 'sysBP', 'diaBP', 'BMI', 'heartRate', 'glucose', 'Risk']
+H. Number of duplicate rows: 0
+
+E, F, G. Column Types, Missing Counts, Missing Percentages:
+  - male: Type=Integer, Missing=0 (0.00%)
+  - age: Type=Integer, Missing=0 (0.00%)
+  - currentSmoker: Type=Integer, Missing=0 (0.00%)
+  - cigsPerDay: Type=Integer, Missing=29 (0.68%)
+  - BPMeds: Type=Integer, Missing=53 (1.25%)
+  - diabetes: Type=Integer, Missing=0 (0.00%)
+  - totChol: Type=Integer, Missing=50 (1.18%)
+  - sysBP: Type=Float, Missing=0 (0.00%)
+  - diaBP: Type=Float, Missing=0 (0.00%)
+  - BMI: Type=Float, Missing=19 (0.45%)
+  - heartRate: Type=Integer, Missing=1 (0.02%)
+  - glucose: Type=Integer, Missing=388 (9.15%)
+  - Risk: Type=Integer, Missing=0 (0.00%)
+
+I. Categorical Columns Unique Values:
+  (None - all columns numeric)
+
+J. Numerical Columns Min, Max, Mean, Median:
+  - male: Min=0.0, Max=1.0, Mean=0.43, Median=0.00 (discrete unique values: [0.0, 1.0])
+  - age: Min=32.0, Max=70.0, Mean=49.58, Median=49.00
+  - currentSmoker: Min=0.0, Max=1.0, Mean=0.49, Median=0.00 (discrete unique values: [0.0, 1.0])
+  - cigsPerDay: Min=0.0, Max=70.0, Mean=9.01, Median=0.00
+  - BPMeds: Min=0.0, Max=1.0, Mean=0.03, Median=0.00 (discrete unique values: [0.0, 1.0])
+  - diabetes: Min=0.0, Max=1.0, Mean=0.03, Median=0.00 (discrete unique values: [0.0, 1.0])
+  - totChol: Min=107.0, Max=696.0, Mean=236.70, Median=234.00
+  - sysBP: Min=83.5, Max=295.0, Mean=132.35, Median=128.00
+  - diaBP: Min=48.0, Max=142.5, Mean=82.90, Median=82.00
+  - BMI: Min=15.54, Max=56.8, Mean=25.80, Median=25.40
+  - heartRate: Min=44.0, Max=143.0, Mean=75.88, Median=75.00
+  - glucose: Min=40.0, Max=394.0, Mean=81.96, Median=78.00
+  - Risk: Min=0.0, Max=1.0, Mean=0.31, Median=0.00 (discrete unique values: [0.0, 1.0])
+
+Candidate Target Distributions:
+  - 'male' (unique=2): {'0': 2420, '1': 1820}
+  - 'currentSmoker' (unique=2): {'0': 2145, '1': 2095}
+  - 'BPMeds' (unique=2): {'0': 4063, '1': 124}
+  - 'diabetes' (unique=2): {'0': 4131, '1': 109}
+  - 'Risk' (unique=2): {'0': 2923, '1': 1317}
+
+
+
+===========================================================================
+ANALYSIS REPORT FOR: diabetes_prediction_dataset.csv
+===========================================================================
+A. Filename: diabetes_prediction_dataset.csv
+B. Number of rows: 100000
+C. Number of columns: 9
+D. Exact column names: ['gender', 'age', 'hypertension', 'heart_disease', 'smoking_history', 'bmi', 'HbA1c_level', 'blood_glucose_level', 'diabetes']
+H. Number of duplicate rows: 3854
+
+E, F, G. Column Types, Missing Counts, Missing Percentages:
+  - gender: Type=Categorical/String, Missing=0 (0.00%)
+  - age: Type=Float, Missing=0 (0.00%)
+  - hypertension: Type=Integer, Missing=0 (0.00%)
+  - heart_disease: Type=Integer, Missing=0 (0.00%)
+  - smoking_history: Type=Categorical/String, Missing=0 (0.00%)
+  - bmi: Type=Float, Missing=0 (0.00%)
+  - HbA1c_level: Type=Float, Missing=0 (0.00%)
+  - blood_glucose_level: Type=Integer, Missing=0 (0.00%)
+  - diabetes: Type=Integer, Missing=0 (0.00%)
+
+I. Categorical Columns Unique Values:
+  - gender (3 unique): {'Female': 58552, 'Male': 41430, 'Other': 18}
+  - smoking_history (6 unique): {'never': 35095, 'No Info': 35816, 'current': 9286, 'former': 9352, 'ever': 4004, 'not current': 6447}
+
+J. Numerical Columns Min, Max, Mean, Median:
+  - age: Min=0.08, Max=80.0, Mean=41.89, Median=43.00
+  - hypertension: Min=0.0, Max=1.0, Mean=0.07, Median=0.00 (discrete unique values: [0.0, 1.0])
+  - heart_disease: Min=0.0, Max=1.0, Mean=0.04, Median=0.00 (discrete unique values: [0.0, 1.0])
+  - bmi: Min=10.01, Max=95.69, Mean=27.32, Median=27.32
+  - HbA1c_level: Min=3.5, Max=9.0, Mean=5.53, Median=5.80
+  - blood_glucose_level: Min=80.0, Max=300.0, Mean=138.06, Median=140.00
+  - diabetes: Min=0.0, Max=1.0, Mean=0.09, Median=0.00 (discrete unique values: [0.0, 1.0])
+
+Candidate Target Distributions:
+  - 'gender' (unique=3): {'Female': 58552, 'Male': 41430, 'Other': 18}
+  - 'hypertension' (unique=2): {'0': 92515, '1': 7485}
+  - 'heart_disease' (unique=2): {'0': 96058, '1': 3942}
+  - 'smoking_history' (unique=6): {'No Info': 35816, 'never': 35095, 'former': 9352, 'current': 9286, 'not current': 6447, 'ever': 4004}
+  - 'diabetes' (unique=2): {'0': 91500, '1': 8500}
+
+
+
+===========================================================================
+ANALYSIS REPORT FOR: cpod.csv
+===========================================================================
+A. Filename: cpod.csv
+B. Number of rows: 101
+C. Number of columns: 24
+D. Exact column names: ['', 'ID', 'AGE', 'PackHistory', 'COPDSEVERITY', 'MWT1', 'MWT2', 'MWT1Best', 'FEV1', 'FEV1PRED', 'FVC', 'FVCPRED', 'CAT', 'HAD', 'SGRQ', 'AGEquartiles', 'copd', 'gender', 'smoking', 'Diabetes', 'muscular', 'hypertension', 'AtrialFib', 'IHD']
+H. Number of duplicate rows: 0
+
+E, F, G. Column Types, Missing Counts, Missing Percentages:
+  - : Type=Integer, Missing=0 (0.00%)
+  - ID: Type=Integer, Missing=0 (0.00%)
+  - AGE: Type=Integer, Missing=0 (0.00%)
+  - PackHistory: Type=Float, Missing=0 (0.00%)
+  - COPDSEVERITY: Type=Categorical/String, Missing=0 (0.00%)
+  - MWT1: Type=Integer, Missing=2 (1.98%)
+  - MWT2: Type=Integer, Missing=1 (0.99%)
+  - MWT1Best: Type=Integer, Missing=1 (0.99%)
+  - FEV1: Type=Float, Missing=0 (0.00%)
+  - FEV1PRED: Type=Float, Missing=0 (0.00%)
+  - FVC: Type=Float, Missing=0 (0.00%)
+  - FVCPRED: Type=Integer, Missing=0 (0.00%)
+  - CAT: Type=Integer, Missing=0 (0.00%)
+  - HAD: Type=Float, Missing=0 (0.00%)
+  - SGRQ: Type=Float, Missing=0 (0.00%)
+  - AGEquartiles: Type=Integer, Missing=0 (0.00%)
+  - copd: Type=Integer, Missing=0 (0.00%)
+  - gender: Type=Integer, Missing=0 (0.00%)
+  - smoking: Type=Integer, Missing=0 (0.00%)
+  - Diabetes: Type=Integer, Missing=0 (0.00%)
+  - muscular: Type=Integer, Missing=0 (0.00%)
+  - hypertension: Type=Integer, Missing=0 (0.00%)
+  - AtrialFib: Type=Integer, Missing=0 (0.00%)
+  - IHD: Type=Integer, Missing=0 (0.00%)
+
+I. Categorical Columns Unique Values:
+  - COPDSEVERITY (4 unique): {'SEVERE': 27, 'MODERATE': 43, 'VERY SEVERE': 8, 'MILD': 23}
+
+J. Numerical Columns Min, Max, Mean, Median:
+  - : Min=1.0, Max=101.0, Mean=51.00, Median=51.00
+  - ID: Min=1.0, Max=169.0, Mean=91.41, Median=87.00
+  - AGE: Min=44.0, Max=88.0, Mean=70.10, Median=71.00
+  - PackHistory: Min=1.0, Max=109.0, Mean=39.70, Median=36.00
+  - MWT1: Min=120.0, Max=688.0, Mean=385.86, Median=419.00
+  - MWT2: Min=120.0, Max=699.0, Mean=390.28, Median=399.00
+  - MWT1Best: Min=120.0, Max=699.0, Mean=399.11, Median=420.00
+  - FEV1: Min=0.45, Max=3.18, Mean=1.60, Median=1.60
+  - FEV1PRED: Min=3.29, Max=102.0, Mean=58.53, Median=60.00
+  - FVC: Min=1.14, Max=5.37, Mean=2.95, Median=2.77
+  - FVCPRED: Min=27.0, Max=132.0, Mean=86.44, Median=84.00
+  - CAT: Min=3.0, Max=188.0, Mean=19.34, Median=18.00
+  - HAD: Min=0.0, Max=56.2, Mean=11.18, Median=10.00
+  - SGRQ: Min=2.0, Max=77.44, Mean=40.19, Median=38.21
+  - AGEquartiles: Min=1.0, Max=4.0, Mean=2.48, Median=3.00 (discrete unique values: [1.0, 2.0, 3.0, 4.0])
+  - copd: Min=1.0, Max=4.0, Mean=2.20, Median=2.00 (discrete unique values: [1.0, 2.0, 3.0, 4.0])
+  - gender: Min=0.0, Max=1.0, Mean=0.64, Median=1.00 (discrete unique values: [0.0, 1.0])
+  - smoking: Min=1.0, Max=2.0, Mean=1.84, Median=2.00 (discrete unique values: [1.0, 2.0])
+  - Diabetes: Min=0.0, Max=1.0, Mean=0.21, Median=0.00 (discrete unique values: [0.0, 1.0])
+  - muscular: Min=0.0, Max=1.0, Mean=0.19, Median=0.00 (discrete unique values: [0.0, 1.0])
+  - hypertension: Min=0.0, Max=1.0, Mean=0.12, Median=0.00 (discrete unique values: [0.0, 1.0])
+  - AtrialFib: Min=0.0, Max=1.0, Mean=0.20, Median=0.00 (discrete unique values: [0.0, 1.0])
+  - IHD: Min=0.0, Max=1.0, Mean=0.09, Median=0.00 (discrete unique values: [0.0, 1.0])
+
+Candidate Target Distributions:
+  - 'COPDSEVERITY' (unique=4): {'MODERATE': 43, 'SEVERE': 27, 'MILD': 23, 'VERY SEVERE': 8}
+  - 'AGEquartiles' (unique=4): {'3': 28, '1': 26, '2': 24, '4': 23}
+  - 'copd' (unique=4): {'2': 43, '3': 27, '1': 23, '4': 8}
+  - 'gender' (unique=2): {'1': 65, '0': 36}
+  - 'smoking' (unique=2): {'2': 85, '1': 16}
+  - 'Diabetes' (unique=2): {'0': 80, '1': 21}
+  - 'muscular' (unique=2): {'0': 82, '1': 19}
+  - 'hypertension' (unique=2): {'0': 89, '1': 12}
+  - 'AtrialFib' (unique=2): {'0': 81, '1': 20}
+  - 'IHD' (unique=2): {'0': 92, '1': 9}
+
+
+
+===========================================================================
+ANALYSIS REPORT FOR: CKD_NHANES_2021_2023.csv
+===========================================================================
+A. Filename: CKD_NHANES_2021_2023.csv
+B. Number of rows: 11933
+C. Number of columns: 29
+D. Exact column names: ['participant_id', 'age', 'gender', 'ethnicity', 'education_level', 'poverty_income_ratio', 'bmi', 'weight_kg', 'height_cm', 'bp_systolic', 'bp_diastolic', 'serum_creatinine', 'blood_urea_nitrogen', 'albumin_serum', 'phosphorus', 'bicarbonate', 'calcium', 'uric_acid', 'urine_creatinine', 'urine_albumin', 'albumin_creatinine_ratio', 'diabetes_diagnosed', 'insulin_use', 'diabetes_pills', 'ever_smoked', 'current_smoker', 'egfr', 'ckd_stage', 'ckd_present']
+H. Number of duplicate rows: 0
+
+E, F, G. Column Types, Missing Counts, Missing Percentages:
+  - participant_id: Type=Integer, Missing=0 (0.00%)
+  - age: Type=Float, Missing=0 (0.00%)
+  - gender: Type=Categorical/String, Missing=0 (0.00%)
+  - ethnicity: Type=Categorical/String, Missing=0 (0.00%)
+  - education_level: Type=Integer, Missing=4139 (34.69%)
+  - poverty_income_ratio: Type=Float, Missing=2041 (17.10%)
+  - bmi: Type=Float, Missing=3462 (29.01%)
+  - weight_kg: Type=Float, Missing=3179 (26.64%)
+  - height_cm: Type=Float, Missing=3434 (28.78%)
+  - bp_systolic: Type=Integer, Missing=4416 (37.01%)
+  - bp_diastolic: Type=Integer, Missing=4416 (37.01%)
+  - serum_creatinine: Type=Float, Missing=5607 (46.99%)
+  - blood_urea_nitrogen: Type=Integer, Missing=5607 (46.99%)
+  - albumin_serum: Type=Float, Missing=5567 (46.65%)
+  - phosphorus: Type=Float, Missing=5611 (47.02%)
+  - bicarbonate: Type=Integer, Missing=5608 (47.00%)
+  - calcium: Type=Float, Missing=5571 (46.69%)
+  - uric_acid: Type=Float, Missing=5604 (46.96%)
+  - urine_creatinine: Type=Integer, Missing=3779 (31.67%)
+  - urine_albumin: Type=Float, Missing=3780 (31.68%)
+  - albumin_creatinine_ratio: Type=Float, Missing=3780 (31.68%)
+  - diabetes_diagnosed: Type=Integer, Missing=193 (1.62%)
+  - insulin_use: Type=Integer, Missing=10852 (90.94%)
+  - diabetes_pills: Type=Integer, Missing=9652 (80.88%)
+  - ever_smoked: Type=Integer, Missing=3798 (31.83%)
+  - current_smoker: Type=Integer, Missing=8690 (72.82%)
+  - egfr: Type=Float, Missing=5607 (46.99%)
+  - ckd_stage: Type=Categorical/String, Missing=0 (0.00%)
+  - ckd_present: Type=Integer, Missing=0 (0.00%)
+
+I. Categorical Columns Unique Values:
+  - gender (2 unique): {'Male': 5575, 'Female': 6358}
+  - ethnicity (6 unique): {'Non-Hispanic Asian': 681, 'Non-Hispanic White': 6217, 'Other Hispanic': 1373, 'Other/Multiracial': 948, 'Mexican American': 1117, 'Non-Hispanic Black': 1597}
+  - ckd_stage (8 unique): {'No CKD': 3592, 'Unknown': 5607, 'Stage 2 (Mildly Decreased)': 1875, 'Stage 1 (Kidney Damage)': 382, 'Stage 4 (Severely Decreased)': 28, 'Stage 3a (Mild-Moderate)': 341, 'Stage 3b (Moderate-Severe)': 97, 'Stage 5 (Kidney Failure)': 11}
+
+J. Numerical Columns Min, Max, Mean, Median:
+  - participant_id: Min=130378.0, Max=142310.0, Mean=136344.00, Median=136344.00
+  - age: Min=5.397605346934028e-79, Max=80.0, Mean=38.32, Median=37.00
+  - education_level: Min=1.0, Max=9.0, Mean=3.80, Median=4.00
+  - poverty_income_ratio: Min=5.397605346934028e-79, Max=5.0, Mean=2.71, Median=2.50
+  - bmi: Min=11.1, Max=74.8, Mean=27.25, Median=26.40
+  - weight_kg: Min=2.7, Max=248.2, Mean=70.55, Median=71.70
+  - height_cm: Min=79.1, Max=200.7, Mean=159.66, Median=163.60
+  - bp_systolic: Min=61.0, Max=232.0, Mean=119.29, Median=117.00
+  - bp_diastolic: Min=33.0, Max=142.0, Mean=72.75, Median=72.00
+  - serum_creatinine: Min=0.33, Max=15.17, Mean=0.87, Median=0.83
+  - blood_urea_nitrogen: Min=4.0, Max=74.0, Mean=14.66, Median=14.00
+  - albumin_serum: Min=2.2, Max=5.5, Mean=4.10, Median=4.10
+  - phosphorus: Min=1.6, Max=7.0, Mean=3.61, Median=3.60
+  - bicarbonate: Min=15.0, Max=37.0, Mean=24.45, Median=24.00
+  - calcium: Min=7.5, Max=11.7, Mean=9.43, Median=9.40
+  - uric_acid: Min=1.1, Max=13.2, Mean=5.13, Median=5.00
+  - urine_creatinine: Min=4.0, Max=873.0, Mean=133.26, Median=117.00
+  - urine_albumin: Min=0.21, Max=7942.47, Mean=35.57, Median=9.62
+  - albumin_creatinine_ratio: Min=0.08, Max=14708.28, Mean=33.36, Median=8.27
+  - diabetes_diagnosed: Min=1.0, Max=9.0, Mean=1.93, Median=2.00 (discrete unique values: [1.0, 2.0, 3.0, 9.0])
+  - insulin_use: Min=1.0, Max=2.0, Mean=1.68, Median=2.00 (discrete unique values: [1.0, 2.0])
+  - diabetes_pills: Min=1.0, Max=9.0, Mean=1.63, Median=2.00 (discrete unique values: [1.0, 2.0, 9.0])
+  - ever_smoked: Min=1.0, Max=9.0, Mean=1.61, Median=2.00 (discrete unique values: [1.0, 2.0, 7.0, 9.0])
+  - current_smoker: Min=1.0, Max=3.0, Mean=2.34, Median=3.00 (discrete unique values: [1.0, 2.0, 3.0])
+  - egfr: Min=3.51, Max=178.43, Mean=96.60, Median=97.03
+  - ckd_present: Min=0.0, Max=1.0, Mean=0.70, Median=1.00 (discrete unique values: [0.0, 1.0])
+
+Candidate Target Distributions:
+  - 'gender' (unique=2): {'Female': 6358, 'Male': 5575}
+  - 'ethnicity' (unique=6): {'Non-Hispanic White': 6217, 'Non-Hispanic Black': 1597, 'Other Hispanic': 1373, 'Mexican American': 1117, 'Other/Multiracial': 948, 'Non-Hispanic Asian': 681}
+  - 'education_level' (unique=6): {'5.0': 2625, '4.0': 2370, '3.0': 1749, '2.0': 666, '1.0': 373, '9.0': 11}
+  - 'diabetes_diagnosed' (unique=4): {'2.0': 10371, '1.0': 1081, '3.0': 284, '9.0': 4}
+  - 'insulin_use' (unique=2): {'2.0': 737, '1.0': 344}
+  - 'diabetes_pills' (unique=3): {'2.0': 1389, '1.0': 885, '9.0': 7}
+  - 'ever_smoked' (unique=4): {'2.0': 4878, '1.0': 3243, '9.0': 7, '7.0': 7}
+  - 'current_smoker' (unique=3): {'3.0': 2053, '1.0': 952, '2.0': 238}
+  - 'ckd_stage' (unique=8): {'Unknown': 5607, 'No CKD': 3592, 'Stage 2 (Mildly Decreased)': 1875, 'Stage 1 (Kidney Damage)': 382, 'Stage 3a (Mild-Moderate)': 341, 'Stage 3b (Moderate-Severe)': 97, 'Stage 4 (Severely Decreased)': 28, 'Stage 5 (Kidney Failure)': 11}
+  - 'ckd_present' (unique=2): {'1': 8341, '0': 3592}
+
+
+
+===========================================================================
+ANALYSIS REPORT FOR: obesity.csv
+===========================================================================
+A. Filename: obesity.csv
+B. Number of rows: 2111
+C. Number of columns: 17
+D. Exact column names: ['Gender', 'Age', 'Height', 'Weight', 'family_history_with_overweight', 'FAVC', 'FCVC', 'NCP', 'CAEC', 'SMOKE', 'CH2O', 'SCC', 'FAF', 'TUE', 'CALC', 'MTRANS', 'NObeyesdad']
+H. Number of duplicate rows: 24
+
+E, F, G. Column Types, Missing Counts, Missing Percentages:
+  - Gender: Type=Categorical/String, Missing=0 (0.00%)
+  - Age: Type=Float, Missing=0 (0.00%)
+  - Height: Type=Float, Missing=0 (0.00%)
+  - Weight: Type=Float, Missing=0 (0.00%)
+  - family_history_with_overweight: Type=Categorical/String, Missing=0 (0.00%)
+  - FAVC: Type=Categorical/String, Missing=0 (0.00%)
+  - FCVC: Type=Float, Missing=0 (0.00%)
+  - NCP: Type=Float, Missing=0 (0.00%)
+  - CAEC: Type=Categorical/String, Missing=0 (0.00%)
+  - SMOKE: Type=Categorical/String, Missing=0 (0.00%)
+  - CH2O: Type=Float, Missing=0 (0.00%)
+  - SCC: Type=Categorical/String, Missing=0 (0.00%)
+  - FAF: Type=Float, Missing=0 (0.00%)
+  - TUE: Type=Float, Missing=0 (0.00%)
+  - CALC: Type=Categorical/String, Missing=0 (0.00%)
+  - MTRANS: Type=Categorical/String, Missing=0 (0.00%)
+  - NObeyesdad: Type=Categorical/String, Missing=0 (0.00%)
+
+I. Categorical Columns Unique Values:
+  - Gender (2 unique): {'Female': 1043, 'Male': 1068}
+  - family_history_with_overweight (2 unique): {'yes': 1726, 'no': 385}
+  - FAVC (2 unique): {'no': 245, 'yes': 1866}
+  - CAEC (4 unique): {'Sometimes': 1765, 'Frequently': 242, 'Always': 53, 'no': 51}
+  - SMOKE (2 unique): {'no': 2067, 'yes': 44}
+  - SCC (2 unique): {'no': 2015, 'yes': 96}
+  - CALC (4 unique): {'no': 639, 'Sometimes': 1401, 'Frequently': 70, 'Always': 1}
+  - MTRANS (5 unique): {'Public_Transportation': 1580, 'Walking': 56, 'Automobile': 457, 'Motorbike': 11, 'Bike': 7}
+  - NObeyesdad (7 unique): {'Normal_Weight': 287, 'Overweight_Level_I': 290, 'Overweight_Level_II': 290, 'Obesity_Type_I': 351, 'Insufficient_Weight': 272, 'Obesity_Type_II': 297, 'Obesity_Type_III': 324}
+
+J. Numerical Columns Min, Max, Mean, Median:
+  - Age: Min=14.0, Max=61.0, Mean=24.31, Median=22.78
+  - Height: Min=1.45, Max=1.98, Mean=1.70, Median=1.70
+  - Weight: Min=39.0, Max=173.0, Mean=86.59, Median=83.00
+  - FCVC: Min=1.0, Max=3.0, Mean=2.42, Median=2.39
+  - NCP: Min=1.0, Max=4.0, Mean=2.69, Median=3.00
+  - CH2O: Min=1.0, Max=3.0, Mean=2.01, Median=2.00
+  - FAF: Min=0.0, Max=3.0, Mean=1.01, Median=1.00
+  - TUE: Min=0.0, Max=2.0, Mean=0.66, Median=0.63
+
+Candidate Target Distributions:
+  - 'Gender' (unique=2): {'Male': 1068, 'Female': 1043}
+  - 'family_history_with_overweight' (unique=2): {'yes': 1726, 'no': 385}
+  - 'FAVC' (unique=2): {'yes': 1866, 'no': 245}
+  - 'CAEC' (unique=4): {'Sometimes': 1765, 'Frequently': 242, 'Always': 53, 'no': 51}
+  - 'SMOKE' (unique=2): {'no': 2067, 'yes': 44}
+  - 'SCC' (unique=2): {'no': 2015, 'yes': 96}
+  - 'CALC' (unique=4): {'Sometimes': 1401, 'no': 639, 'Frequently': 70, 'Always': 1}
+  - 'MTRANS' (unique=5): {'Public_Transportation': 1580, 'Automobile': 457, 'Walking': 56, 'Motorbike': 11, 'Bike': 7}
+  - 'NObeyesdad' (unique=7): {'Obesity_Type_I': 351, 'Obesity_Type_III': 324, 'Obesity_Type_II': 297, 'Overweight_Level_I': 290, 'Overweight_Level_II': 290, 'Normal_Weight': 287, 'Insufficient_Weight': 272}
+
+
+
+===========================================================================
+ANALYSIS REPORT FOR: thyroid_cancer_risk_data-selected-columns (2).csv
+===========================================================================
+A. Filename: thyroid_cancer_risk_data-selected-columns (2).csv
+B. Number of rows: 8421
+C. Number of columns: 10
+D. Exact column names: ['Patient_ID', 'Age', 'Gender', 'Country', 'Ethnicity', 'Family_History', 'Radiation_Exposure', 'Iodine_Deficiency', 'Smoking', 'Obesity']
+H. Number of duplicate rows: 0
+
+E, F, G. Column Types, Missing Counts, Missing Percentages:
+  - Patient_ID: Type=Integer, Missing=0 (0.00%)
+  - Age: Type=Integer, Missing=0 (0.00%)
+  - Gender: Type=Categorical/String, Missing=0 (0.00%)
+  - Country: Type=Categorical/String, Missing=0 (0.00%)
+  - Ethnicity: Type=Categorical/String, Missing=0 (0.00%)
+  - Family_History: Type=Categorical/String, Missing=0 (0.00%)
+  - Radiation_Exposure: Type=Categorical/String, Missing=0 (0.00%)
+  - Iodine_Deficiency: Type=Categorical/String, Missing=0 (0.00%)
+  - Smoking: Type=Categorical/String, Missing=0 (0.00%)
+  - Obesity: Type=Categorical/String, Missing=0 (0.00%)
+
+I. Categorical Columns Unique Values:
+  - Gender (2 unique): {'Male': 3352, 'Female': 5069}
+  - Country (10 unique): {'Russia': 868, 'Germany': 433, 'Nigeria': 1189, 'India': 1704, 'UK': 415, 'South Korea': 565, 'Brazil': 838, 'China': 1279, 'Japan': 676, 'USA': 454}
+  - Ethnicity (5 unique): {'Caucasian': 2568, 'Hispanic': 1238, 'Asian': 2078, 'African': 1714, 'Middle Eastern': 823}
+  - Family_History (2 unique): {'No': 5875, 'Yes': 2546}
+  - Radiation_Exposure (2 unique): {'Yes': 1339, 'No': 7082}
+  - Iodine_Deficiency (2 unique): {'No': 6377, 'Yes': 2044}
+  - Smoking (2 unique): {'No': 6697, 'Yes': 1724}
+  - Obesity (2 unique): {'No': 5871, 'Yes': 2550}
+
+J. Numerical Columns Min, Max, Mean, Median:
+  - Patient_ID: Min=1.0, Max=8421.0, Mean=4211.00, Median=4211.00
+  - Age: Min=15.0, Max=89.0, Mean=51.92, Median=52.00
+
+Candidate Target Distributions:
+  - 'Gender' (unique=2): {'Female': 5069, 'Male': 3352}
+  - 'Country' (unique=10): {'India': 1704, 'China': 1279, 'Nigeria': 1189, 'Russia': 868, 'Brazil': 838, 'Japan': 676, 'South Korea': 565, 'USA': 454, 'Germany': 433, 'UK': 415}
+  - 'Ethnicity' (unique=5): {'Caucasian': 2568, 'Asian': 2078, 'African': 1714, 'Hispanic': 1238, 'Middle Eastern': 823}
+  - 'Family_History' (unique=2): {'No': 5875, 'Yes': 2546}
+  - 'Radiation_Exposure' (unique=2): {'No': 7082, 'Yes': 1339}
+  - 'Iodine_Deficiency' (unique=2): {'No': 6377, 'Yes': 2044}
+  - 'Smoking' (unique=2): {'No': 6697, 'Yes': 1724}
+  - 'Obesity' (unique=2): {'No': 5871, 'Yes': 2550}
+
+
+

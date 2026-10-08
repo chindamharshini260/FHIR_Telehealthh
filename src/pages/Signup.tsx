@@ -1,28 +1,36 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Login() {
+function Signup() {
   const navigate = useNavigate();
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setMessage("Please enter email and password.");
+  const handleSignup = async () => {
+    if (!name || !email || !password || !confirmPassword) {
+      setMessage("Please fill all fields.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setMessage("Passwords do not match.");
       return;
     }
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/auth/login",
+        "/api/auth/signup",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            name,
             email,
             password,
           }),
@@ -32,21 +40,15 @@ function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-        setMessage(data.message || "Login failed.");
+        setMessage(data.message || "Signup failed.");
         return;
       }
 
-      localStorage.setItem(
-        "loggedInUser",
-        JSON.stringify(data.user)
-      );
+      setMessage("Account created successfully!");
 
-      // Send users to the correct portal
-      if (data.user.role === "doctor") {
-        navigate("/doctor");
-      } else {
-        navigate("/dashboard");
-      }
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
     } catch (error) {
       console.error(error);
       setMessage("Unable to connect to server.");
@@ -58,19 +60,24 @@ function Login() {
       <div className="auth-card">
 
         <div className="auth-logo">
-          <div className="logo-icon" style={{ margin: "0 auto 12px" }}>
+          <div
+            className="logo-icon"
+            style={{
+              margin: "0 auto 12px",
+            }}
+          >
             +
           </div>
 
           <h1>FHIR Telehealth</h1>
 
           <p>
-            Secure digital healthcare & remote monitoring
+            Create your secure patient account
           </p>
         </div>
 
         <h2 style={{ marginBottom: "6px" }}>
-          Welcome back
+          Create Account
         </h2>
 
         <p
@@ -80,8 +87,21 @@ function Login() {
             marginBottom: "25px",
           }}
         >
-          Sign in to access your healthcare dashboard.
+          Enter your details to get started.
         </p>
+
+        <div className="form-group">
+          <label>Full Name</label>
+
+          <input
+            type="text"
+            placeholder="Enter your full name"
+            value={name}
+            onChange={(e) =>
+              setName(e.target.value)
+            }
+          />
+        </div>
 
         <div className="form-group">
           <label>Email Address</label>
@@ -101,7 +121,7 @@ function Login() {
 
           <input
             type="password"
-            placeholder="Enter your password"
+            placeholder="Create a password"
             value={password}
             onChange={(e) =>
               setPassword(e.target.value)
@@ -109,10 +129,25 @@ function Login() {
           />
         </div>
 
+        <div className="form-group">
+          <label>Confirm Password</label>
+
+          <input
+            type="password"
+            placeholder="Confirm your password"
+            value={confirmPassword}
+            onChange={(e) =>
+              setConfirmPassword(e.target.value)
+            }
+          />
+        </div>
+
         {message && (
           <p
             style={{
-              color: "#dc2626",
+              color: message.includes("success")
+                ? "#16a34a"
+                : "#dc2626",
               fontSize: "13px",
               marginBottom: "15px",
             }}
@@ -127,9 +162,9 @@ function Login() {
             width: "100%",
             padding: "12px",
           }}
-          onClick={handleLogin}
+          onClick={handleSignup}
         >
-          Sign In
+          Create Patient Account
         </button>
 
         <div
@@ -146,7 +181,7 @@ function Login() {
               fontSize: "14px",
             }}
           >
-            Don't have a patient account?
+            Already have an account?
           </p>
 
           <button
@@ -154,9 +189,9 @@ function Login() {
             style={{
               width: "100%",
             }}
-            onClick={() => navigate("/signup")}
+            onClick={() => navigate("/")}
           >
-            Create Patient Account
+            Back to Login
           </button>
         </div>
 
@@ -165,4 +200,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Signup;

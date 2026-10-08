@@ -1,0 +1,5 @@
+{
+  "name": "FHIR Telehealth",
+  "description": "FHIR-compliant Telehealth & Remote Patient Monitoring platform with vitals tracking, appointment scheduling, and predictive health risk assessment.",
+  "capabilities": []
+}

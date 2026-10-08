@@ -51,6 +51,19 @@ const [hypertensionMlLoading, setHypertensionMlLoading] =
 const [hypertensionMlResultRecordId, setHypertensionMlResultRecordId] =
   useState<string | null>(null);
 
+const [diabetesMlResult, setDiabetesMlResult] = useState<{
+  disease: string;
+  prediction: number;
+  probability: number;
+  risk: string;
+  message?: string;
+  disclaimer?: string;
+} | null>(null);
+
+const [diabetesMlLoading, setDiabetesMlLoading] = useState(false);
+const [diabetesMlResultRecordId, setDiabetesMlResultRecordId] =
+  useState<string | null>(null);
+
   const [selectedPatient, setSelectedPatient] =
     useState("all");
 
@@ -71,8 +84,17 @@ const [hypertensionMlResultRecordId, setHypertensionMlResultRecordId] =
       return;
     }
 
-    if (loggedInUser.role !== "doctor") {
+    const userRole = (loggedInUser.role || "").toLowerCase().trim();
+    if (userRole === "patient") {
       navigate("/dashboard");
+      return;
+    }
+    if (userRole === "admin") {
+      navigate("/admin");
+      return;
+    }
+    if (userRole !== "doctor") {
+      navigate("/");
       return;
     }
 
@@ -86,7 +108,7 @@ const [hypertensionMlResultRecordId, setHypertensionMlResultRecordId] =
   const fetchHealthRecords = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/doctor/health-readings"
+        "/api/doctor/health-readings"
       );
 
       const data = await response.json();
@@ -116,7 +138,7 @@ const [hypertensionMlResultRecordId, setHypertensionMlResultRecordId] =
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/fhir-observations"
+        "/api/fhir-observations"
       );
 
       const data = await response.json();
@@ -422,7 +444,7 @@ const [hypertensionMlResultRecordId, setHypertensionMlResultRecordId] =
     console.log("Sending ML request");
 
     const response = await fetch(
-      "http://localhost:5000/api/ml/heart-disease",
+      "/api/ml/heart-disease",
       {
         method: "POST",
         headers: {
@@ -513,7 +535,7 @@ const mlInput = {
     );
 
     const response = await fetch(
-      "http://localhost:5000/api/ml/hypertension",
+      "/api/ml/hypertension",
       {
         method: "POST",
         headers: {
@@ -557,6 +579,54 @@ const mlInput = {
 
   } finally {
     setHypertensionMlLoading(false);
+  }
+};
+
+const predictDiabetes = async (record: HealthRecord) => {
+  try {
+    setDiabetesMlLoading(true);
+    setDiabetesMlResult(null);
+
+    const readings = record.readings || {};
+    const profile = record.ml_profile || {};
+
+    const heightM = (Number(readings.height) || 170) / 100;
+    const weightKg = Number(readings.weight) || 70;
+    const bmi = Number((weightKg / (heightM * heightM)).toFixed(1));
+
+    const mlInput = {
+      gender: profile.male === 1 ? "Male" : "Female",
+      age: Number(profile.age || 45),
+      hypertension: profile.BPMeds === 1 || Number(readings.systolic || 120) >= 140 ? 1 : 0,
+      heart_disease: 0,
+      smoking_history: readings.smoking_history || (profile.currentSmoker === 1 ? "current" : "never"),
+      bmi: bmi,
+      HbA1c_level: Number(readings.hba1c || 5.8),
+      blood_glucose_level: Number(readings.glucose || 110),
+    };
+
+    const response = await fetch("/api/ml/diabetes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(mlInput),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Diabetes ML prediction failed");
+    }
+
+    setDiabetesMlResult(data.prediction);
+    setDiabetesMlResultRecordId(record.id);
+
+  } catch (error) {
+    console.error("Diabetes ML prediction error:", error);
+    alert("Unable to get diabetes ML prediction.");
+  } finally {
+    setDiabetesMlLoading(false);
   }
 };
   // =========================================================
@@ -1327,6 +1397,61 @@ const mlInput = {
 
           </div>
         )}
+    </>
+  )}
+
+  {/* DIABETES ML */}
+  {record.condition.toLowerCase() === "diabetes" && (
+    <>
+      <button
+        className="primary-button"
+        onClick={() => predictDiabetes(record)}
+        disabled={diabetesMlLoading}
+      >
+        {diabetesMlLoading ? "Analyzing..." : "🤖 Analyze Diabetes"}
+      </button>
+
+      {diabetesMlResult && diabetesMlResultRecordId === record.id && (
+        <div className="ml-inline-result">
+          <div className="ml-result-title">
+            🤖 Diabetes ML Risk Assessment
+          </div>
+
+          <div className="ml-result-items">
+            <div>
+              <span>Risk</span>
+              <strong className={getRiskClass(diabetesMlResult.risk)}>
+                {diabetesMlResult.risk}
+              </strong>
+            </div>
+
+            <div>
+              <span>Probability</span>
+              <strong>{diabetesMlResult.probability}%</strong>
+            </div>
+
+            <div>
+              <span>Prediction</span>
+              <strong>
+                {diabetesMlResult.prediction === 1
+                  ? "Elevated Diabetes Risk"
+                  : "Low Diabetes Risk"}
+              </strong>
+            </div>
+          </div>
+
+          {diabetesMlResult.message && (
+            <p style={{ fontSize: "13px", color: "#334155", margin: "8px 0" }}>
+              {diabetesMlResult.message}
+            </p>
+          )}
+
+          <div className="ml-disclaimer">
+            {diabetesMlResult.disclaimer ||
+              "AI-generated risk assessment for clinical decision support only. Final clinical decisions must be made by a qualified healthcare professional."}
+          </div>
+        </div>
+      )}
     </>
   )}
 

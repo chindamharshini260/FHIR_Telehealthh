@@ -12,11 +12,15 @@ from sklearn.metrics import (
     confusion_matrix
 )
 
+import os
+
 # ==============================
 # 1. Load dataset
 # ==============================
 
-DATA_PATH = "data/hypertension.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "data", "hypertension.csv")
+MODEL_PATH = os.path.join(BASE_DIR, "hypertension_model.joblib")
 
 data = pd.read_csv(DATA_PATH)
 
@@ -140,8 +144,6 @@ print(classification_report(
 # ==============================
 # 8. Save model
 # ==============================
-
-MODEL_PATH = "hypertension_model.joblib"
 
 joblib.dump(model, MODEL_PATH)
 

@@ -93,8 +93,17 @@ const [hypertensionProfile, setHypertensionProfile] =
       return;
     }
 
-    if (loggedInUser.role !== "patient") {
+    const userRole = (loggedInUser.role || "").toLowerCase().trim();
+    if (userRole === "doctor") {
       navigate("/doctor");
+      return;
+    }
+    if (userRole === "admin") {
+      navigate("/admin");
+      return;
+    }
+    if (userRole !== "patient") {
+      navigate("/");
       return;
     }
 
@@ -104,7 +113,7 @@ const [hypertensionProfile, setHypertensionProfile] =
   const fetchConditions = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/patient-conditions/${loggedInUser.id}`
+        `/api/patient-conditions/${loggedInUser.id}`
       );
 
       const data = await response.json();
@@ -125,7 +134,7 @@ const [hypertensionProfile, setHypertensionProfile] =
 
   try {
     const response = await fetch(
-      "http://localhost:5000/api/patient-conditions",
+      "/api/patient-conditions",
       {
         method: "POST",
         headers: {

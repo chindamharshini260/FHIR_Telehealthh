@@ -65,7 +65,7 @@ function HealthMonitoring() {
   const fetchConditions = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/patient-conditions/${patientId}`
+        `/api/patient-conditions/${patientId}`
       );
 
       const data = await response.json();
@@ -122,7 +122,7 @@ function HealthMonitoring() {
   ) => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/observations",
+        "/api/observations",
         {
           method: "POST",
 
@@ -338,7 +338,7 @@ function HealthMonitoring() {
       // ============================
 
       const response = await fetch(
-        "http://localhost:5000/api/health-readings",
+        "/api/health-readings",
         {
           method: "POST",
 
@@ -1070,6 +1070,44 @@ function HealthMonitoring() {
                             "kg",
                             "65"
                           )}
+
+                          {inputField(
+                            condition,
+                            "height",
+                            "Height",
+                            "cm",
+                            "170"
+                          )}
+
+                          <div className="monitor-input-group">
+                            <label>
+                              Smoking Status
+                              <span>history</span>
+                            </label>
+                            <select
+                              value={getReading(condition, "smoking_history") || "never"}
+                              onChange={(e) =>
+                                updateReading(
+                                  condition,
+                                  "smoking_history",
+                                  e.target.value
+                                )
+                              }
+                              style={{
+                                width: "100%",
+                                padding: "10px",
+                                borderRadius: "8px",
+                                border: "1px solid #e2e8f0",
+                                background: "#fff",
+                                fontSize: "14px",
+                              }}
+                            >
+                              <option value="never">Never</option>
+                              <option value="former">Former Smoker</option>
+                              <option value="current">Current Smoker</option>
+                              <option value="No Info">No Info / Prefer not to say</option>
+                            </select>
+                          </div>
 
                         </div>
 

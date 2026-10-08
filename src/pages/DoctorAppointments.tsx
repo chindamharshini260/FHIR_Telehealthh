@@ -27,8 +27,17 @@ function DoctorAppointments() {
       return;
     }
 
-    if (loggedInUser.role !== "doctor") {
+    const userRole = (loggedInUser.role || "").toLowerCase().trim();
+    if (userRole === "patient") {
       navigate("/dashboard");
+      return;
+    }
+    if (userRole === "admin") {
+      navigate("/admin");
+      return;
+    }
+    if (userRole !== "doctor") {
+      navigate("/");
       return;
     }
 
@@ -38,7 +47,7 @@ function DoctorAppointments() {
   const fetchAppointments = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/appointments/doctor/${loggedInUser.id}`
+        `/api/appointments/doctor/${loggedInUser.id}`
       );
 
       const data = await response.json();
@@ -63,7 +72,7 @@ function DoctorAppointments() {
   ) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/appointments/${appointmentId}/status`,
+        `/api/appointments/${appointmentId}/status`,
         {
           method: "PATCH",
           headers: {

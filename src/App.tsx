@@ -15,6 +15,7 @@ import Appointments from "./pages/Appointments";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import DoctorAppointments from "./pages/DoctorAppointments";
 import Conditions from "./pages/Conditions";
+import AdminDashboard from "./pages/AdminDashboard";
 function App() {
   return (
     <BrowserRouter>
@@ -72,6 +73,12 @@ function App() {
         <Route
           path="/doctor/appointments"
           element={<DoctorAppointments />}
+        />
+
+        {/* Admin Portal */}
+        <Route
+          path="/admin"
+          element={<AdminDashboard />}
         />
 
       </Routes>

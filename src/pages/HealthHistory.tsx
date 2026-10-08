@@ -26,15 +26,24 @@ function HealthHistory() {
       return;
     }
 
-    if (loggedInUser.role !== "patient") {
+    const userRole = (loggedInUser.role || "").toLowerCase().trim();
+    if (userRole === "doctor") {
       navigate("/doctor");
+      return;
+    }
+    if (userRole === "admin") {
+      navigate("/admin");
+      return;
+    }
+    if (userRole !== "patient") {
+      navigate("/");
       return;
     }
 
     const fetchHistory = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/health-readings/${loggedInUser.id}`
+          `/api/health-readings/${loggedInUser.id}`
         );
 
         const data = await response.json();

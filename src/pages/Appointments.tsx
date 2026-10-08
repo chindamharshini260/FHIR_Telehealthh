@@ -41,6 +41,16 @@ function Appointments() {
       return;
     }
 
+    const userRole = (loggedInUser.role || "").toLowerCase().trim();
+    if (userRole === "doctor") {
+      navigate("/doctor/appointments");
+      return;
+    }
+    if (userRole === "admin") {
+      navigate("/admin");
+      return;
+    }
+
     fetchDoctors();
     fetchAppointments();
   }, [navigate, loggedInUser?.id]);
@@ -48,7 +58,7 @@ function Appointments() {
   const fetchDoctors = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/doctors"
+        "/api/doctors"
       );
 
       const data = await response.json();
@@ -64,7 +74,7 @@ function Appointments() {
   const fetchAppointments = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/appointments/patient/${loggedInUser.id}`
+        `/api/appointments/patient/${loggedInUser.id}`
       );
 
       const data = await response.json();
@@ -93,7 +103,7 @@ function Appointments() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/appointments",
+        "/api/appointments",
         {
           method: "POST",
           headers: {

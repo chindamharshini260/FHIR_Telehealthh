@@ -1,7 +1,26 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 function LandingPage() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("loggedInUser") || "null");
+      if (user) {
+        const role = (user.role || "").toLowerCase().trim();
+        if (role === "doctor") {
+          navigate("/doctor");
+        } else if (role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
+      }
+    } catch (e) {
+      console.warn("Error parsing loggedInUser", e);
+    }
+  }, [navigate]);
 
   return (
     <div className="landing-page">
@@ -102,7 +121,7 @@ function LandingPage() {
 
               <button
                 className="portal-button"
-               onClick={() => alert("Admin login coming next")}
+                onClick={() => navigate("/login?role=admin")}
               >
                 Admin Login →
               </button>

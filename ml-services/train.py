@@ -17,11 +17,15 @@ from sklearn.metrics import (
 )
 
 
+import os
+
 # --------------------------------------------------
 # 1. Dataset path
 # --------------------------------------------------
 
-DATA_PATH = "data/processed.cleveland.data"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "data", "processed.cleveland.data")
+MODEL_PATH = os.path.join(BASE_DIR, "heart_disease_model.joblib")
 
 
 # --------------------------------------------------
