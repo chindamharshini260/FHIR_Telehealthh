@@ -11,9 +11,24 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # LOAD ML MODELS
 # ==============================
 
-heart_model = joblib.load(os.path.join(BASE_DIR, "heart_disease_model.joblib"))
-hypertension_model = joblib.load(os.path.join(BASE_DIR, "hypertension_model.joblib"))
-diabetes_model = joblib.load(os.path.join(BASE_DIR, "diabetes_model.joblib"))
+def load_model(filename):
+    paths = [
+        os.path.join(BASE_DIR, filename),
+        os.path.join(BASE_DIR, "..", filename),
+    ]
+    for p in paths:
+        if os.path.exists(p):
+            try:
+                print(f"Loading {filename} from {p}...")
+                return joblib.load(p)
+            except Exception as e:
+                print(f"Failed to load {p}: {e}")
+    print(f"Warning: {filename} not found.")
+    return None
+
+heart_model = load_model("heart_disease_model.joblib")
+hypertension_model = load_model("hypertension_model.joblib")
+diabetes_model = load_model("diabetes_model.joblib")
 
 
 # ==============================
@@ -109,6 +124,11 @@ def predict_heart_disease():
                 "missing": missing_features
             }), 400
 
+        if heart_model is None:
+            return jsonify({
+                "error": "Heart disease model is not loaded"
+            }), 503
+
         input_data = pd.DataFrame(
             [[data[feature] for feature in HEART_FEATURES]],
             columns=HEART_FEATURES
@@ -169,6 +189,11 @@ def predict_hypertension():
                 "error": "Missing features",
                 "missing": missing_features
             }), 400
+
+        if hypertension_model is None:
+            return jsonify({
+                "error": "Hypertension model is not loaded"
+            }), 503
 
         input_data = pd.DataFrame(
             [[data[feature] for feature in HYPERTENSION_FEATURES]],
@@ -231,6 +256,11 @@ def predict_diabetes():
                 "error": "Missing features",
                 "missing": missing_features
             }), 400
+
+        if diabetes_model is None:
+            return jsonify({
+                "error": "Diabetes model is not loaded"
+            }), 503
 
         # Construct single-row DataFrame
         row_dict = {

@@ -7,7 +7,7 @@ export type Patient = {
 
 export const patients: Patient[] = [
   {
-    id: "patient-001",
+    id: "d0000001-0000-0000-0000-000000000001",
     name: "Demo Patient",
     age: 45,
     gender: "Female",

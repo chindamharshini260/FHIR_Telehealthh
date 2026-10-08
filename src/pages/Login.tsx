@@ -1,12 +1,41 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const role = searchParams.get("role");
+    if (role === "doctor") {
+      setEmail("doctor@example.com");
+      setPassword("password");
+    } else if (role === "admin") {
+      setEmail("admin@test.com");
+      setPassword("password");
+    } else if (role === "patient") {
+      setEmail("patient@example.com");
+      setPassword("password");
+    }
+  }, [searchParams]);
+
+  const setDemoCredentials = (role: "patient" | "doctor" | "admin") => {
+    if (role === "doctor") {
+      setEmail("doctor@example.com");
+      setPassword("password");
+    } else if (role === "admin") {
+      setEmail("admin@test.com");
+      setPassword("password");
+    } else {
+      setEmail("patient@example.com");
+      setPassword("password");
+    }
+    setMessage("");
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -134,6 +163,38 @@ function Login() {
         >
           Sign In
         </button>
+
+        <div style={{ marginTop: "16px", textAlign: "center" }}>
+          <div style={{ fontSize: "12px", color: "#64748b", marginBottom: "8px" }}>
+            Quick Demo Fill:
+          </div>
+          <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+            <button
+              type="button"
+              className="secondary-button"
+              style={{ fontSize: "12px", padding: "4px 8px" }}
+              onClick={() => setDemoCredentials("patient")}
+            >
+              🧑 Patient
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              style={{ fontSize: "12px", padding: "4px 8px" }}
+              onClick={() => setDemoCredentials("doctor")}
+            >
+              👨‍⚕️ Doctor
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              style={{ fontSize: "12px", padding: "4px 8px" }}
+              onClick={() => setDemoCredentials("admin")}
+            >
+              🛡️ Admin
+            </button>
+          </div>
+        </div>
 
         <div
           style={{

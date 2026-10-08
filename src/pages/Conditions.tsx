@@ -87,6 +87,26 @@ const [hypertensionProfile, setHypertensionProfile] =
     BMI: "",
     glucose: "",
   });
+
+const [showHeartDiseaseForm, setShowHeartDiseaseForm] =
+  useState(false);
+
+const [heartDiseaseProfile, setHeartDiseaseProfile] =
+  useState({
+    age: "",
+    sex: "1",
+    cp: "1",
+    trestbps: "",
+    chol: "",
+    fbs: "0",
+    restecg: "0",
+    thalach: "",
+    exang: "0",
+    oldpeak: "0",
+    slope: "1",
+    ca: "0",
+    thal: "3",
+  });
   useEffect(() => {
     if (!loggedInUser) {
       navigate("/");
@@ -432,6 +452,8 @@ const [hypertensionProfile, setHypertensionProfile] =
                         onClick={() => {
   if (condition.value === "hypertension") {
     setShowHypertensionForm(true);
+  } else if (condition.value === "heart_disease") {
+    setShowHeartDiseaseForm(true);
   } else {
     addCondition(condition.value);
   }
@@ -671,6 +693,284 @@ const [hypertensionProfile, setHypertensionProfile] =
         onClick={() =>
           setShowHypertensionForm(false)
         }
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
+
+{showHeartDiseaseForm && (
+  <div
+    className="dashboard-panel"
+    style={{
+      marginBottom: "18px",
+      padding: "20px",
+    }}
+  >
+    <div className="panel-heading">
+      <div>
+        <h2>Heart Disease Clinical Profile</h2>
+        <p>
+          Enter the Cleveland clinical evaluation metrics for predictive cardiovascular risk assessment.
+        </p>
+      </div>
+    </div>
+
+    <div className="form-grid">
+      <div className="form-group">
+        <label>Age</label>
+        <input
+          type="number"
+          value={heartDiseaseProfile.age}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              age: e.target.value,
+            })
+          }
+          placeholder="Age (years)"
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Sex</label>
+        <select
+          value={heartDiseaseProfile.sex}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              sex: e.target.value,
+            })
+          }
+        >
+          <option value="1">Male</option>
+          <option value="0">Female</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Chest Pain Type (cp)</label>
+        <select
+          value={heartDiseaseProfile.cp}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              cp: e.target.value,
+            })
+          }
+        >
+          <option value="1">1: Typical Angina</option>
+          <option value="2">2: Atypical Angina</option>
+          <option value="3">3: Non-Anginal Pain</option>
+          <option value="4">4: Asymptomatic</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Resting Blood Pressure (trestbps)</label>
+        <input
+          type="number"
+          value={heartDiseaseProfile.trestbps}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              trestbps: e.target.value,
+            })
+          }
+          placeholder="mmHg (e.g. 130)"
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Serum Cholesterol (chol)</label>
+        <input
+          type="number"
+          value={heartDiseaseProfile.chol}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              chol: e.target.value,
+            })
+          }
+          placeholder="mg/dL (e.g. 230)"
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Fasting Blood Sugar &gt; 120 mg/dl (fbs)</label>
+        <select
+          value={heartDiseaseProfile.fbs}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              fbs: e.target.value,
+            })
+          }
+        >
+          <option value="0">No (&lt;= 120 mg/dL)</option>
+          <option value="1">Yes (&gt; 120 mg/dL)</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Resting ECG (restecg)</label>
+        <select
+          value={heartDiseaseProfile.restecg}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              restecg: e.target.value,
+            })
+          }
+        >
+          <option value="0">0: Normal</option>
+          <option value="1">1: ST-T Wave Abnormality</option>
+          <option value="2">2: Left Ventricular Hypertrophy</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Maximum Heart Rate Achieved (thalach)</label>
+        <input
+          type="number"
+          value={heartDiseaseProfile.thalach}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              thalach: e.target.value,
+            })
+          }
+          placeholder="BPM (e.g. 150)"
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Exercise Induced Angina (exang)</label>
+        <select
+          value={heartDiseaseProfile.exang}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              exang: e.target.value,
+            })
+          }
+        >
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>ST Depression Induced by Exercise (oldpeak)</label>
+        <input
+          type="number"
+          step="0.1"
+          value={heartDiseaseProfile.oldpeak}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              oldpeak: e.target.value,
+            })
+          }
+          placeholder="e.g. 1.5"
+        />
+      </div>
+
+      <div className="form-group">
+        <label>Slope of Peak Exercise ST (slope)</label>
+        <select
+          value={heartDiseaseProfile.slope}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              slope: e.target.value,
+            })
+          }
+        >
+          <option value="1">1: Upsloping</option>
+          <option value="2">2: Flat</option>
+          <option value="3">3: Downsloping</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Major Vessels Colored by Fluoroscopy (ca)</label>
+        <select
+          value={heartDiseaseProfile.ca}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              ca: e.target.value,
+            })
+          }
+        >
+          <option value="0">0 vessels</option>
+          <option value="1">1 vessel</option>
+          <option value="2">2 vessels</option>
+          <option value="3">3 vessels</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Thalassemia (thal)</label>
+        <select
+          value={heartDiseaseProfile.thal}
+          onChange={(e) =>
+            setHeartDiseaseProfile({
+              ...heartDiseaseProfile,
+              thal: e.target.value,
+            })
+          }
+        >
+          <option value="3">3: Normal</option>
+          <option value="6">6: Fixed Defect</option>
+          <option value="7">7: Reversible Defect</option>
+        </select>
+      </div>
+    </div>
+
+    <div
+      style={{
+        display: "flex",
+        gap: "10px",
+        marginTop: "18px",
+      }}
+    >
+      <button
+        className="primary-button"
+        onClick={() => {
+          if (!heartDiseaseProfile.age || !heartDiseaseProfile.trestbps || !heartDiseaseProfile.chol || !heartDiseaseProfile.thalach) {
+            alert("Please fill in the required clinical values (age, resting BP, cholesterol, max heart rate).");
+            return;
+          }
+
+          const profile = {
+            age: Number(heartDiseaseProfile.age),
+            sex: Number(heartDiseaseProfile.sex),
+            cp: Number(heartDiseaseProfile.cp),
+            trestbps: Number(heartDiseaseProfile.trestbps),
+            chol: Number(heartDiseaseProfile.chol),
+            fbs: Number(heartDiseaseProfile.fbs),
+            restecg: Number(heartDiseaseProfile.restecg),
+            thalach: Number(heartDiseaseProfile.thalach),
+            exang: Number(heartDiseaseProfile.exang),
+            oldpeak: Number(heartDiseaseProfile.oldpeak),
+            slope: Number(heartDiseaseProfile.slope),
+            ca: Number(heartDiseaseProfile.ca),
+            thal: Number(heartDiseaseProfile.thal),
+          };
+
+          addCondition("heart_disease", profile);
+          setShowHeartDiseaseForm(false);
+        }}
+      >
+        Save Heart Disease Profile
+      </button>
+
+      <button
+        className="secondary-button"
+        onClick={() => setShowHeartDiseaseForm(false)}
       >
         Cancel
       </button>

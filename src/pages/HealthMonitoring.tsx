@@ -197,7 +197,12 @@ function HealthMonitoring() {
     // ----------------------------
 
     if (condition === "diabetes") {
-      if (!reading.glucose) {
+      if (
+        !reading.glucose ||
+        !reading.hba1c ||
+        !reading.weight ||
+        !reading.height
+      ) {
         isValid = false;
       }
     }

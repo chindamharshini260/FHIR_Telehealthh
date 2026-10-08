@@ -410,7 +410,7 @@ const [diabetesMlResultRecordId, setDiabetesMlResultRecordId] =
     return "Low";
   };
 
- const predictHeartDisease = async (
+  const predictHeartDisease = async (
   record: HealthRecord
 ) => {
   try {
@@ -420,25 +420,42 @@ const [diabetesMlResultRecordId, setDiabetesMlResultRecordId] =
     setMlResult(null);
 
     const readings = record.readings || {};
+    const profile = record.ml_profile || {};
+
+    const age = profile.age ?? readings.age;
+    const sex = profile.sex ?? profile.male ?? readings.sex;
+    const cp = profile.cp ?? readings.cp;
+    const trestbps = readings.systolic ?? profile.trestbps;
+    const chol = profile.chol ?? readings.chol;
+    const fbs = profile.fbs ?? readings.fbs ?? 0;
+    const restecg = profile.restecg ?? readings.restecg ?? 0;
+    const thalach = readings.heartRate ?? readings.thalach ?? profile.thalach;
+    const exang = profile.exang ?? readings.exang ?? 0;
+    const oldpeak = profile.oldpeak ?? readings.oldpeak ?? 0;
+    const slope = profile.slope ?? readings.slope ?? 1;
+    const ca = profile.ca ?? readings.ca ?? 0;
+    const thal = profile.thal ?? readings.thal ?? 3;
+
+    if (age === undefined || sex === undefined || cp === undefined || trestbps === undefined || chol === undefined || thalach === undefined) {
+      alert("Cannot run ML prediction: Missing required clinical data (age, sex, chest pain type, resting BP, cholesterol, or heart rate). Please ask patient to complete their Heart Disease profile.");
+      setMlLoading(false);
+      return;
+    }
 
     const mlInput = {
-      age: Number(readings.age || 55),
-      sex: Number(readings.sex || 1),
-      cp: Number(readings.cp || 1),
-      trestbps: Number(readings.systolic || 120),
-      chol: Number(readings.chol || 200),
-      fbs: Number(readings.fbs || 0),
-      restecg: Number(readings.restecg || 0),
-      thalach: Number(
-        readings.thalach ||
-        readings.heartRate ||
-        70
-      ),
-      exang: Number(readings.exang || 0),
-      oldpeak: Number(readings.oldpeak || 0),
-      slope: Number(readings.slope || 1),
-      ca: Number(readings.ca || 0),
-      thal: Number(readings.thal || 3),
+      age: Number(age),
+      sex: Number(sex),
+      cp: Number(cp),
+      trestbps: Number(trestbps),
+      chol: Number(chol),
+      fbs: Number(fbs),
+      restecg: Number(restecg),
+      thalach: Number(thalach),
+      exang: Number(exang),
+      oldpeak: Number(oldpeak),
+      slope: Number(slope),
+      ca: Number(ca),
+      thal: Number(thal),
     };
 
     console.log("Sending ML request");
@@ -512,22 +529,28 @@ const predictHypertension = async (
 
     const profile = record.ml_profile || {};
     console.log("Hypertension ML profile:", profile);
-console.log("Hypertension readings:", readings);
+    console.log("Hypertension readings:", readings);
 
-const mlInput = {
-  male: Number(profile.male),
-  age: Number(profile.age),
-  currentSmoker: Number(profile.currentSmoker),
-  cigsPerDay: Number(profile.cigsPerDay),
-  BPMeds: Number(profile.BPMeds),
-  diabetes: Number(profile.diabetes),
-  totChol: Number(profile.totChol),
-  sysBP: Number(readings.systolic),
-  diaBP: Number(readings.diastolic),
-  BMI: Number(profile.BMI),
-  heartRate: Number(readings.heartRate),
-  glucose: Number(profile.glucose),
-};
+    if (profile.male === undefined || profile.age === undefined || !readings.systolic || !readings.diastolic) {
+      alert("Cannot run ML prediction: Missing required hypertension profile or blood pressure readings. Please ensure the patient's hypertension profile is completed.");
+      setHypertensionMlLoading(false);
+      return;
+    }
+
+    const mlInput = {
+      male: Number(profile.male),
+      age: Number(profile.age),
+      currentSmoker: Number(profile.currentSmoker ?? 0),
+      cigsPerDay: Number(profile.cigsPerDay ?? 0),
+      BPMeds: Number(profile.BPMeds ?? 0),
+      diabetes: Number(profile.diabetes ?? 0),
+      totChol: Number(profile.totChol ?? 200),
+      sysBP: Number(readings.systolic),
+      diaBP: Number(readings.diastolic),
+      BMI: Number(profile.BMI ?? 25),
+      heartRate: Number(readings.heartRate ?? 72),
+      glucose: Number(profile.glucose ?? 90),
+    };
 
     console.log(
       "Sending hypertension ML request:",
@@ -590,19 +613,25 @@ const predictDiabetes = async (record: HealthRecord) => {
     const readings = record.readings || {};
     const profile = record.ml_profile || {};
 
-    const heightM = (Number(readings.height) || 170) / 100;
-    const weightKg = Number(readings.weight) || 70;
+    if (!readings.glucose || !readings.hba1c || !readings.weight || !readings.height) {
+      alert("Cannot run Diabetes ML assessment: Missing clinical measurements (blood glucose, HbA1c, height, or weight). Please ensure patient has recorded complete diabetes readings.");
+      setDiabetesMlLoading(false);
+      return;
+    }
+
+    const heightM = Number(readings.height) / 100;
+    const weightKg = Number(readings.weight);
     const bmi = Number((weightKg / (heightM * heightM)).toFixed(1));
 
     const mlInput = {
-      gender: profile.male === 1 ? "Male" : "Female",
-      age: Number(profile.age || 45),
-      hypertension: profile.BPMeds === 1 || Number(readings.systolic || 120) >= 140 ? 1 : 0,
-      heart_disease: 0,
+      gender: (profile.male === 0 || profile.sex === 0 || String(profile.gender).toLowerCase() === "female") ? "Female" : "Male",
+      age: Number(profile.age ?? readings.age ?? 45),
+      hypertension: (profile.BPMeds === 1 || Number(readings.systolic || 0) >= 140) ? 1 : 0,
+      heart_disease: record.condition.toLowerCase() === "heart_disease" ? 1 : 0,
       smoking_history: readings.smoking_history || (profile.currentSmoker === 1 ? "current" : "never"),
       bmi: bmi,
-      HbA1c_level: Number(readings.hba1c || 5.8),
-      blood_glucose_level: Number(readings.glucose || 110),
+      HbA1c_level: Number(readings.hba1c),
+      blood_glucose_level: Number(readings.glucose),
     };
 
     const response = await fetch("/api/ml/diabetes", {
@@ -1280,7 +1309,7 @@ const predictDiabetes = async (record: HealthRecord) => {
 
                         </div>
 
-                       \<div className="ml-action-row">
+                        <div className="ml-action-row">
 
   {/* HEART DISEASE ML */}
   {record.condition.toLowerCase() === "heart_disease" && (
